@@ -18,13 +18,13 @@ pub mod bitboard_constants {
         pub const DEFAULT_BISHOPS_BLACK: u64 =
             0b00100100_00000000_00000000_00000000_00000000_00000000_00000000_00000000;
         pub const DEFAULT_QUEENS_WHITE: u64 =
-            0b00000000_00000000_00000000_00000000_00000000_00000000_00000000_00010000;
-        pub const DEFAULT_QUEENS_BLACK: u64 =
-            0b00010000_00000000_00000000_00000000_00000000_00000000_00000000_00000000;
-        pub const DEFAULT_KING_WHITE: u64 =
             0b00000000_00000000_00000000_00000000_00000000_00000000_00000000_00001000;
-        pub const DEFAULT_KING_BLACK: u64 =
+        pub const DEFAULT_QUEENS_BLACK: u64 =
             0b00001000_00000000_00000000_00000000_00000000_00000000_00000000_00000000;
+        pub const DEFAULT_KING_WHITE: u64 =
+            0b00000000_00000000_00000000_00000000_00000000_00000000_00000000_00010000;
+        pub const DEFAULT_KING_BLACK: u64 =
+            0b00010000_00000000_00000000_00000000_00000000_00000000_00000000_00000000;
     }
 
     pub mod bitboard_indices {
@@ -42,18 +42,26 @@ pub mod bitboard_constants {
 
 use bitboard_constants::{bitboard_indices::*, starting_positions::*};
 
+use crate::{Color, Piece};
+
 // Error variants when constructing a new bitboard
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BitBoardCreationError {
     PieceOverlap,
     BadKingCount,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BitBoardConversionError {
+    BadSquare,
+    BadBitboard,
 }
 
 pub trait From<BitBoardCreationError> {
     fn from(err: BitBoardCreationError) -> Self;
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BitBoards {
     boards: [[u64; 6]; 2],
 }
@@ -214,6 +222,78 @@ impl BitBoards {
     pub fn total_pieces(&self) -> u32 {
         self.all_boards().count_ones()
     }
+
+    pub fn square_to_bitboard(square: u8) -> Result<u64, BitBoardConversionError> {
+        if square > 63 {
+            return Err(BitBoardConversionError::BadSquare);
+        }
+
+        Ok(1 << square)
+    }
+
+    pub fn bitboard_to_square(bitboard: u64) -> Result<u8, BitBoardConversionError> {
+        if bitboard.count_ones() != 1 {
+            return Err(BitBoardConversionError::BadBitboard);
+        }
+
+        Ok(bitboard.trailing_zeros() as u8)
+    }
+
+    pub fn piece_at(&self, square: u8) -> Option<(Color, Piece)> {
+        let Ok(bitboard) = BitBoards::square_to_bitboard(square) else {
+            return None;
+        };
+
+        if self.boards[WHITE][PAWN] & bitboard == 1 {
+            return Some((Color::White, Piece::Pawn));
+        }
+
+        if self.boards[WHITE][KNIGHT] & bitboard == 1 {
+            return Some((Color::White, Piece::Knight));
+        }
+
+        if self.boards[WHITE][BISHOP] & bitboard == 1 {
+            return Some((Color::White, Piece::Bishop));
+        }
+
+        if self.boards[WHITE][ROOK] & bitboard == 1 {
+            return Some((Color::White, Piece::Rook));
+        }
+
+        if self.boards[WHITE][QUEEN] & bitboard == 1 {
+            return Some((Color::White, Piece::Queen));
+        }
+
+        if self.boards[WHITE][KING] & bitboard == 1 {
+            return Some((Color::White, Piece::King));
+        }
+
+        if self.boards[BLACK][PAWN] & bitboard == 1 {
+            return Some((Color::Black, Piece::Pawn));
+        }
+
+        if self.boards[BLACK][KNIGHT] & bitboard == 1 {
+            return Some((Color::Black, Piece::Knight));
+        }
+
+        if self.boards[BLACK][BISHOP] & bitboard == 1 {
+            return Some((Color::Black, Piece::Bishop));
+        }
+
+        if self.boards[BLACK][ROOK] & bitboard == 1 {
+            return Some((Color::Black, Piece::Rook));
+        }
+
+        if self.boards[BLACK][QUEEN] & bitboard == 1 {
+            return Some((Color::Black, Piece::Queen));
+        }
+
+        if self.boards[BLACK][KING] & bitboard == 1 {
+            return Some((Color::Black, Piece::King));
+        }
+
+        None
+    }
 }
 
 #[cfg(test)]
@@ -230,5 +310,20 @@ mod tests {
             BitBoards::default(),
             0b11111111_11111111_00000000_00000000_00000000_00000000_11111111_11111111,
         );
+    }
+
+    #[test]
+    fn test_bitboard_conversion() {
+        assert_eq!(
+            BitBoards::square_to_bitboard(69),
+            Err(BitBoardConversionError::BadSquare)
+        );
+        assert_eq!(BitBoards::square_to_bitboard(53), Ok(1 << 53));
+
+        assert_eq!(
+            BitBoards::bitboard_to_square(0b11),
+            Err(BitBoardConversionError::BadBitboard)
+        );
+        assert_eq!(BitBoards::bitboard_to_square(1 << 53), Ok(53));
     }
 }
