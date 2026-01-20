@@ -1,4 +1,4 @@
-mod move_constants {
+pub mod move_constants {
     pub const QUIET_MOVE: u16 = 0b0000 << 12;
     pub const DOUBLE_PAWN_PUSH: u16 = 0b0001 << 12;
     pub const KING_CASTLE: u16 = 0b0010 << 12;
@@ -21,6 +21,7 @@ use move_constants::*;
 pub struct Move(u16);
 
 impl Move {
+    /// Returns an optional move instance from square indices.
     pub fn from_squares(initial_square: u8, target_square: u8) -> Option<Self> {
         let initial_square = checked_square_u8_to_square_u16(initial_square)?;
         let target_square = checked_square_u8_to_square_u16(target_square)?;
@@ -28,6 +29,7 @@ impl Move {
         Some(Self((initial_square << 6) | target_square))
     }
 
+    /// Returns an optional move instance from square string slices.
     pub fn from_squares_str(initial_square: &str, target_square: &str) -> Option<Self> {
         let i_square_index = square_str_to_index(initial_square)?;
         let t_square_index = square_str_to_index(target_square)?;
@@ -35,6 +37,14 @@ impl Move {
         let new_move = Move::from_squares(i_square_index, t_square_index)?;
 
         Some(new_move)
+    }
+
+    pub fn get_initial_square(&self) -> u8 {
+        ((self.0 >> 6) & 0b111111) as u8
+    }
+
+    pub fn get_target_square(&self) -> u8 {
+        (self.0 & 0b111111) as u8
     }
 
     pub fn is_quiet(&self) -> bool {
