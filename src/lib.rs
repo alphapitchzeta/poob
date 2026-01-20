@@ -2,6 +2,7 @@ pub mod bitboards;
 pub mod boardstate;
 pub mod rende;
 pub mod util;
+mod moves;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Color {
