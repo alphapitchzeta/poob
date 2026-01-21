@@ -1,3 +1,5 @@
+// Constants representing the different arrangements of bit flags
+// for the four leftmost bits of a u16 representing a move.
 pub mod move_constants {
     pub const QUIET_MOVE: u16 = 0b0000 << 12;
     pub const DOUBLE_PAWN_PUSH: u16 = 0b0001 << 12;
@@ -18,6 +20,7 @@ pub mod move_constants {
 use crate::util::*;
 use move_constants::*;
 
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Move(u16);
 
 impl Move {
@@ -101,5 +104,18 @@ impl Move {
 
     pub fn is_queen_promotion_capture(&self) -> bool {
         self.0 & QUEEN_PROMOTION_CAPTURE == QUEEN_PROMOTION_CAPTURE
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_from_squares() {
+        let i_square = 8;
+        let t_square = 24;
+
+        assert_eq!(Move::from_squares(i_square, t_square), Some(Move(0b00000010_00011000)));
     }
 }
