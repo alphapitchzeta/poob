@@ -1,5 +1,6 @@
 pub mod bitboards;
 pub mod boardstate;
+pub mod moves;
 pub mod rende;
 pub mod util;
 
