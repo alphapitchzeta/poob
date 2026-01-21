@@ -42,10 +42,14 @@ impl Move {
         Some(new_move)
     }
 
+    /// Extracts the initial square encoded in the move and returns
+    /// it as a `u8`.
     pub fn get_initial_square(&self) -> u8 {
         ((self.0 >> 6) & 0b111111) as u8
     }
 
+    /// Extracts the target square encoded in the move and returns
+    /// it as a `u8`.
     pub fn get_target_square(&self) -> u8 {
         (self.0 & 0b111111) as u8
     }
@@ -116,6 +120,9 @@ mod tests {
         let i_square = 8;
         let t_square = 24;
 
-        assert_eq!(Move::from_squares(i_square, t_square), Some(Move(0b00000010_00011000)));
+        assert_eq!(
+            Move::from_squares(i_square, t_square),
+            Some(Move(0b00000010_00011000))
+        );
     }
 }
