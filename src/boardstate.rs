@@ -4,7 +4,6 @@ use crate::util::*;
 use crate::{Color, Piece};
 
 mod boardstate_constants {
-    pub const PROJECTED_GAME_LENGTH: usize = 40;
     pub const CAN_CASTLE_KINGSIDE_WHITE: u8 = 0b0010;
     pub const CAN_CASTLE_KINGSIDE_BLACK: u8 = 0b1000;
     pub const CAN_CASTLE_QUEENSIDE_WHITE: u8 = 0b0001;
@@ -13,26 +12,6 @@ mod boardstate_constants {
 }
 
 use boardstate_constants::*;
-
-#[derive(Debug)]
-pub struct CurrentBoardState {
-    pub board_state: BoardState,
-    history: BoardHistory,
-}
-
-impl CurrentBoardState {
-    pub fn get_position(&self) -> &BitBoards {
-        &self.board_state.position
-    }
-
-    pub fn get_mut_position(&mut self) -> &mut BitBoards {
-        &mut self.board_state.position
-    }
-
-    pub fn get_turn(&self, index: usize) -> Option<&BoardState> {
-        self.history.get(index)
-    }
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BoardStateCreationError {
@@ -59,7 +38,7 @@ pub enum FenStringError {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct BoardState {
-    position: BitBoards,
+    pub position: BitBoards,
     pub side_to_move: Color,
     castling_rights: u8,
     pub en_passant_square: Option<u8>,
@@ -371,8 +350,8 @@ impl BoardState {
         &self.position
     }
 
-    pub fn from_current(current: &CurrentBoardState) -> Self {
-        current.board_state.clone()
+    pub fn get_mut_position(&mut self) -> &mut BitBoards {
+        &mut self.position
     }
 
     pub fn can_castle_kingside_white(&self) -> bool {
@@ -389,37 +368,6 @@ impl BoardState {
 
     pub fn can_castle_queenside_black(&self) -> bool {
         self.castling_rights & CAN_CASTLE_QUEENSIDE_BLACK != 0
-    }
-}
-
-#[derive(Debug)]
-pub struct BoardHistory {
-    vec: Vec<BoardState>,
-}
-
-impl BoardHistory {
-    pub fn new() -> Self {
-        Self {
-            vec: Vec::with_capacity(PROJECTED_GAME_LENGTH),
-        }
-    }
-
-    pub fn get(&self, index: usize) -> Option<&BoardState> {
-        if index == 0 {
-            return None;
-        }
-
-        self.vec.get(index - 1)
-    }
-
-    // TODO: Consider adding validation logic so it is guaranteed turns
-    // are all sequential. This logic may be applied elsewhere instead.
-    pub fn push(&mut self, board_state: BoardState) {
-        self.vec.push(board_state);
-    }
-
-    pub fn pop(&mut self) -> Option<BoardState> {
-        self.vec.pop()
     }
 }
 
