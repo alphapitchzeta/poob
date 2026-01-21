@@ -28,9 +28,9 @@ pub mod bitboard_constants {
     }
 }
 
-use bitboard_constants::{bitboard_indices::*, starting_positions::*};
 use crate::moves::Move;
 use crate::{Color, Piece};
+use bitboard_constants::{bitboard_indices::*, starting_positions::*};
 
 // Error variants when constructing a new bitboard
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -289,26 +289,31 @@ impl BitBoards {
 
     /// Updates the bitboards of the piece type and color of the initial square specified in the move,
     /// "moving" it to the target square and replacing any piece present there.
-    /// 
+    ///
     /// # Panics
     /// Currently calls `expect` on `square_to_bitboard`.
-    
+
     // TODO: Consider adding an unchecked version of the square to bitboard helper function.
     pub fn move_piece(&mut self, move_attempt: Move) {
-        let (initial_square, target_square) = (move_attempt.get_initial_square(), move_attempt.get_target_square());
+        let (initial_square, target_square) = (
+            move_attempt.get_initial_square(),
+            move_attempt.get_target_square(),
+        );
 
         let Some((initial_color, initial_piece)) = self.piece_at(initial_square) else {
             return;
         };
 
-        let initial_bitboard = BitBoards::square_to_bitboard(initial_square).expect("Invalid square");
+        let initial_bitboard =
+            BitBoards::square_to_bitboard(initial_square).expect("Invalid square");
         let target_bitboard = BitBoards::square_to_bitboard(target_square).expect("Invalid square");
 
         if let Some((target_color, target_piece)) = self.piece_at(target_square) {
             self.boards[target_color.to_index()][target_piece.to_index()] ^= target_bitboard;
         }
 
-        self.boards[initial_color.to_index()][initial_piece.to_index()] ^= initial_bitboard | target_bitboard;
+        self.boards[initial_color.to_index()][initial_piece.to_index()] ^=
+            initial_bitboard | target_bitboard;
     }
 }
 
@@ -351,5 +356,28 @@ mod tests {
         assert_eq!(board.piece_at(27), None);
         assert_eq!(board.piece_at(0), Some((Color::White, Piece::Rook)));
         assert_eq!(board.piece_at(60), Some((Color::Black, Piece::King)));
+    }
+
+    #[test]
+    fn test_move_piece() {
+        let mut board = BitBoards::default();
+
+        let move_1 = Move::from_squares(15, 31).unwrap();
+
+        board.move_piece(move_1);
+
+        assert_eq!(
+            board.all_boards(),
+            0b11111111_11111111_00000000_00000000_10000000_00000000_01111111_11111111
+        );
+
+        let move_2 = Move::from_squares(7, 31).unwrap();
+
+        board.move_piece(move_2);
+
+        assert_eq!(
+            board.all_boards(),
+            0b11111111_11111111_00000000_00000000_10000000_00000000_01111111_01111111
+        );
     }
 }
