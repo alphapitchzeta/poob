@@ -29,7 +29,7 @@ pub mod bitboard_constants {
 }
 
 use bitboard_constants::{bitboard_indices::*, starting_positions::*};
-
+use crate::moves::Move;
 use crate::{Color, Piece};
 
 // Error variants when constructing a new bitboard
@@ -43,6 +43,12 @@ pub enum BitBoardCreationError {
 pub enum BitBoardConversionError {
     BadSquare,
     BadBitboard,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BitBoardMoveError {
+    NoInitialSquarePiece,
+    TargetSquareFriendly,
 }
 
 pub trait From<BitBoardCreationError> {
@@ -279,6 +285,30 @@ impl BitBoards {
         }
 
         None
+    }
+
+    /// Updates the bitboards of the piece type and color of the initial square specified in the move,
+    /// "moving" it to the target square and replacing any piece present there.
+    /// 
+    /// # Panics
+    /// Currently calls `expect` on `square_to_bitboard`.
+    
+    // TODO: Consider adding an unchecked version of the square to bitboard helper function.
+    pub fn move_piece(&mut self, move_attempt: Move) {
+        let (initial_square, target_square) = (move_attempt.get_initial_square(), move_attempt.get_target_square());
+
+        let Some((initial_color, initial_piece)) = self.piece_at(initial_square) else {
+            return;
+        };
+
+        let initial_bitboard = BitBoards::square_to_bitboard(initial_square).expect("Invalid square");
+        let target_bitboard = BitBoards::square_to_bitboard(target_square).expect("Invalid square");
+
+        if let Some((target_color, target_piece)) = self.piece_at(target_square) {
+            self.boards[target_color.to_index()][target_piece.to_index()] ^= target_bitboard;
+        }
+
+        self.boards[initial_color.to_index()][initial_piece.to_index()] ^= initial_bitboard | target_bitboard;
     }
 }
 
