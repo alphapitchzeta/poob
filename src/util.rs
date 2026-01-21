@@ -1,3 +1,6 @@
+use crate::moves::Move;
+use std::io::{self, Write};
+
 pub fn square_str_to_index(s: &str) -> Option<u8> {
     if s.len() != 2 {
         return None;
@@ -41,6 +44,30 @@ pub fn checked_square_u8_to_square_u16(square_u8: u8) -> Option<u16> {
     };
 
     Some(square_u8 as u16)
+}
+
+pub fn read_move() -> Option<Move> {
+    let mut buf = String::with_capacity(6);
+
+    loop {
+        print!("Make a move: ");
+        io::stdout().flush().unwrap();
+
+        io::stdin().read_line(&mut buf).unwrap();
+
+        if buf.trim().split_ascii_whitespace().count() == 2 {
+            break;
+        }
+
+        buf.clear();
+    }
+
+    let mut squares = buf.trim().split_ascii_whitespace();
+
+    let i_square_str = squares.next()?;
+    let t_square_str = squares.next()?;
+
+    Move::from_squares_str(i_square_str, t_square_str)
 }
 
 #[cfg(test)]
