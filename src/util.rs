@@ -1,6 +1,8 @@
 use crate::moves::Move;
 use std::io::{self, Write};
 
+/// Helper function to convert a square string slice (`"a8"`, `"h3"`, etc.)
+/// to a `u8` square index. Returns `None` if the string slice is malformed.
 pub fn square_str_to_index(s: &str) -> Option<u8> {
     if s.len() != 2 {
         return None;
@@ -23,6 +25,9 @@ pub fn square_str_to_index(s: &str) -> Option<u8> {
     Some(rank * 8 + file)
 }
 
+/// Helper function to convert a `u8` square index to a square `String`
+/// (`"a8"`, `"h3"`, etc.). Returns `None` if the index is invalid (not
+/// in the range `0..64`).
 pub fn index_to_square_str(index: u8) -> Option<String> {
     match index {
         0..64 => (),
@@ -37,6 +42,9 @@ pub fn index_to_square_str(index: u8) -> Option<String> {
     Some(s)
 }
 
+/// Helper function to convert a `u8` square index to a `u16` square
+/// index. Returns `None` if the index is invalid (not in the range
+/// `0..64`).
 pub fn checked_square_u8_to_square_u16(square_u8: u8) -> Option<u16> {
     match square_u8 {
         0..64 => (),
@@ -46,6 +54,11 @@ pub fn checked_square_u8_to_square_u16(square_u8: u8) -> Option<u16> {
     Some(square_u8 as u16)
 }
 
+/// Helper function to read a `Move` from `stdin`. Loops until a valid
+/// move is inputted.
+/// 
+/// # Panics
+/// Calls `unwrap` on `flush` and `read_line`.
 pub fn read_move() -> Option<Move> {
     let mut buf = String::with_capacity(6);
 
