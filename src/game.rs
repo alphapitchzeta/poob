@@ -1,5 +1,5 @@
-use crate::boardstate::*;
 use crate::bitboards::*;
+use crate::boardstate::*;
 use crate::rende::print_bitboard;
 //use crate::util::*;
 use crate::Color;
