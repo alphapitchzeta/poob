@@ -302,6 +302,7 @@ impl BoardState {
         fen.join(" ")
     }
 
+    /// Returns the piece placement section of a FEN string of this board state.
     pub fn bitboard_to_fen(&self) -> String {
         let mut ranks = vec![String::with_capacity(8); 8];
 
@@ -346,26 +347,32 @@ impl BoardState {
         ranks.join("/")
     }
 
+    /// Returns an immutable reference to the bitboards of this board state.
     pub fn get_position(&self) -> &BitBoards {
         &self.position
     }
 
+    /// Returns a mutable reference to the bitboards of this board state.
     pub fn get_mut_position(&mut self) -> &mut BitBoards {
         &mut self.position
     }
 
+    /// Returns true if the white kingside castling bitflag is set, and false otherwise.
     pub fn can_castle_kingside_white(&self) -> bool {
         self.castling_rights & CAN_CASTLE_KINGSIDE_WHITE != 0
     }
 
+    /// Returns true if the black kingside castling bitflag is set, and false otherwise.
     pub fn can_castle_kingside_black(&self) -> bool {
         self.castling_rights & CAN_CASTLE_KINGSIDE_BLACK != 0
     }
 
+    /// Returns true if the white queenside castling bitflag is set, and false otherwise.
     pub fn can_castle_queenside_white(&self) -> bool {
         self.castling_rights & CAN_CASTLE_QUEENSIDE_WHITE != 0
     }
 
+    /// Returns true if the black queenside castling bitflag is set, and false otherwise.
     pub fn can_castle_queenside_black(&self) -> bool {
         self.castling_rights & CAN_CASTLE_QUEENSIDE_BLACK != 0
     }
