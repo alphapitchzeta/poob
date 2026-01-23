@@ -15,6 +15,34 @@ pub mod bitboard_constants {
         pub const DEFAULT_KING_BLACK: u64 = 0b00010000 << 56;
     }
 
+    pub mod rank_file {
+        pub const RANK_1: u64 = 0b11111111;
+        pub const RANK_2: u64 = 0b11111111 << 8;
+        pub const RANK_3: u64 = 0b11111111 << 16;
+        pub const RANK_4: u64 = 0b11111111 << 24;
+        pub const RANK_5: u64 = 0b11111111 << 32;
+        pub const RANK_6: u64 = 0b11111111 << 40;
+        pub const RANK_7: u64 = 0b11111111 << 48;
+        pub const RANK_8: u64 = 0b11111111 << 56;
+
+        pub const FILE_A: u64 =
+            1 | 1 << 8 | 1 << 16 | 1 << 24 | 1 << 32 | 1 << 40 | 1 << 48 | 1 << 56;
+        pub const FILE_B: u64 =
+            1 << 1 | 1 << 9 | 1 << 17 | 1 << 25 | 1 << 33 | 1 << 41 | 1 << 49 | 1 << 57;
+        pub const FILE_C: u64 =
+            1 << 2 | 1 << 10 | 1 << 18 | 1 << 26 | 1 << 34 | 1 << 42 | 1 << 50 | 1 << 58;
+        pub const FILE_D: u64 =
+            1 << 3 | 1 << 11 | 1 << 19 | 1 << 27 | 1 << 35 | 1 << 43 | 1 << 51 | 1 << 59;
+        pub const FILE_E: u64 =
+            1 << 4 | 1 << 12 | 1 << 20 | 1 << 28 | 1 << 36 | 1 << 44 | 1 << 52 | 1 << 60;
+        pub const FILE_F: u64 =
+            1 << 5 | 1 << 13 | 1 << 21 | 1 << 29 | 1 << 37 | 1 << 45 | 1 << 53 | 1 << 61;
+        pub const FILE_G: u64 =
+            1 << 6 | 1 << 14 | 1 << 22 | 1 << 30 | 1 << 38 | 1 << 46 | 1 << 54 | 1 << 62;
+        pub const FILE_H: u64 =
+            1 << 7 | 1 << 15 | 1 << 23 | 1 << 31 | 1 << 39 | 1 << 47 | 1 << 55 | 1 << 63;
+    }
+
     pub mod bitboard_indices {
         pub const WHITE: usize = 0;
         pub const BLACK: usize = 1;
