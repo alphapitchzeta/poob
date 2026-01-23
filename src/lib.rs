@@ -1,10 +1,10 @@
 pub mod bitboards;
 pub mod boardstate;
+pub mod game;
+pub mod movegen;
 pub mod moves;
 pub mod rende;
-pub mod game;
 pub mod util;
-mod moves;
 
 use crate::bitboards::bitboard_constants::bitboard_indices::*;
 
