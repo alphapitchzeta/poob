@@ -22,6 +22,7 @@ pub mod movegen_constants {
 
 use movegen_constants::rank_file_exclusions::*;
 
+#[derive(Debug)]
 pub struct MoveGenerator {
     white_pawn_moves: [u64; 64],
     black_pawn_moves: [u64; 64],
@@ -72,7 +73,7 @@ impl MoveGenerator {
         let mut attacks = 0;
 
         {
-            let mut north_fill = rook;
+            let mut north_fill = rook & NOT_8;
 
             for _ in 0..8 {
                 north_fill <<= 8;
@@ -83,7 +84,7 @@ impl MoveGenerator {
         }
 
         {
-            let mut south_fill = rook;
+            let mut south_fill = rook & NOT_1;
 
             for _ in 0..8 {
                 south_fill >>= 8;
@@ -94,7 +95,7 @@ impl MoveGenerator {
         }
 
         {
-            let mut east_fill = rook;
+            let mut east_fill = rook & NOT_H;
 
             for _ in 0..8 {
                 east_fill <<= 1;
@@ -105,7 +106,7 @@ impl MoveGenerator {
         }
 
         {
-            let mut west_fill = rook;
+            let mut west_fill = rook & NOT_A;
 
             for _ in 0..8 {
                 west_fill >>= 1;
@@ -123,10 +124,10 @@ impl MoveGenerator {
         let mut attacks = 0;
 
         {
-            let mut ne_fill = bishop;
+            let mut ne_fill = bishop & NOT_H8;
 
             for _ in 0..8 {
-                ne_fill <<= 7;
+                ne_fill <<= 9;
                 attacks |= ne_fill;
 
                 ne_fill &= open_squares & NOT_H8;
@@ -134,10 +135,10 @@ impl MoveGenerator {
         }
 
         {
-            let mut nw_fill = bishop;
+            let mut nw_fill = bishop & NOT_A8;
 
             for _ in 0..8 {
-                nw_fill <<= 9;
+                nw_fill <<= 7;
                 attacks |= nw_fill;
 
                 nw_fill &= open_squares & NOT_A8;
@@ -145,7 +146,7 @@ impl MoveGenerator {
         }
 
         {
-            let mut sw_fill = bishop;
+            let mut sw_fill = bishop & NOT_A1;
 
             for _ in 0..8 {
                 sw_fill >>= 7;
@@ -156,7 +157,7 @@ impl MoveGenerator {
         }
 
         {
-            let mut se_fill = bishop;
+            let mut se_fill = bishop & NOT_H1;
 
             for _ in 0..8 {
                 se_fill >>= 9;
@@ -167,6 +168,11 @@ impl MoveGenerator {
         }
 
         attacks
+    }
+
+    pub fn get_queen_attacks(square: u8, open_squares: u64) -> u64 {
+        MoveGenerator::get_bishop_attacks(square, open_squares)
+            | MoveGenerator::get_rook_attacks(square, open_squares)
     }
 }
 
@@ -348,5 +354,21 @@ mod tests {
         let bitboard = 0b00010000 << 8;
         let attacks_3 = MoveGenerator::get_bishop_attacks(3, !bitboard);
         assert_eq!(attacks_3.count_ones(), 4);
+    }
+
+    #[test]
+    fn test_get_queen_attacks() {
+        let attacks_1 = MoveGenerator::get_queen_attacks(0, !0);
+        assert_eq!(attacks_1.count_ones(), 21);
+
+        let attacks_2 = MoveGenerator::get_queen_attacks(4, !0);
+        assert_eq!(attacks_2.count_ones(), 21);
+
+        let attacks_3 = MoveGenerator::get_queen_attacks(28, !0);
+        assert_eq!(attacks_3.count_ones(), 27);
+
+        let bitboard = 0b000101000 << 24;
+        let attacks_4 = MoveGenerator::get_queen_attacks(28, !bitboard);
+        assert_eq!(attacks_4.count_ones(), 22);
     }
 }
