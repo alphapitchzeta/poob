@@ -344,5 +344,9 @@ mod tests {
 
         let attacks_2 = MoveGenerator::get_bishop_attacks(28, !0);
         assert_eq!(attacks_2.count_ones(), 13);
+
+        let bitboard = 0b00010000 << 8;
+        let attacks_3 = MoveGenerator::get_bishop_attacks(3, !bitboard);
+        assert_eq!(attacks_3.count_ones(), 4);
     }
 }
