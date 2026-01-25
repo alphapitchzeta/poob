@@ -70,7 +70,7 @@ impl MoveGenerator {
     pub fn get_rook_attacks(square: u8, open_squares: u64) -> u64 {
         let rook = 1 << square;
         let mut attacks = 0;
-        
+
         {
             let mut north_fill = rook;
 
@@ -79,7 +79,7 @@ impl MoveGenerator {
                 attacks |= north_fill;
 
                 north_fill &= open_squares & NOT_8;
-            }                              
+            }
         }
 
         {
@@ -126,7 +126,7 @@ impl MoveGenerator {
             let mut ne_fill = bishop;
 
             for _ in 0..8 {
-                ne_fill <<= 9;
+                ne_fill <<= 7;
                 attacks |= ne_fill;
 
                 ne_fill &= open_squares & NOT_H8;
@@ -137,7 +137,7 @@ impl MoveGenerator {
             let mut nw_fill = bishop;
 
             for _ in 0..8 {
-                nw_fill <<= 7;
+                nw_fill <<= 9;
                 attacks |= nw_fill;
 
                 nw_fill &= open_squares & NOT_A8;
@@ -175,7 +175,7 @@ pub fn compute_white_pawn_moves() -> [u64; 64] {
 
     for square in 0..64 {
         let pawn = 1 << square;
-        
+
         moves[square] = pawn << 8;
 
         if pawn & RANK_2 != 0 {
@@ -250,12 +250,11 @@ pub fn compute_king_attacks() -> [u64; 64] {
 
     for square in 0..64 {
         let king = 1 << square;
-        
+
         let horizontal_attacks = ((king << 1) & NOT_A) | ((king >> 1) & NOT_H);
         attacks[square] = horizontal_attacks;
         attacks[square] |= horizontal_attacks << 8;
         attacks[square] |= horizontal_attacks >> 8;
-
 
         attacks[square] |= (king << 8) | (king >> 8);
     }
