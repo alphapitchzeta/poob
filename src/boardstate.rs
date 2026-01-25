@@ -268,19 +268,19 @@ impl BoardState {
         } else {
             let mut castle_str = String::with_capacity(4);
 
-            if self.can_castle_kingside_white() {
+            if self.has_castling_rights_kingside_white() {
                 castle_str.push('K');
             }
 
-            if self.can_castle_queenside_white() {
+            if self.has_castling_rights_queenside_white() {
                 castle_str.push('Q');
             }
 
-            if self.can_castle_kingside_black() {
+            if self.has_castling_rights_kingside_black() {
                 castle_str.push('k');
             }
 
-            if self.can_castle_queenside_black() {
+            if self.has_castling_rights_queenside_black() {
                 castle_str.push('q');
             }
 
@@ -358,22 +358,22 @@ impl BoardState {
     }
 
     /// Returns true if the white kingside castling bitflag is set, and false otherwise.
-    pub fn can_castle_kingside_white(&self) -> bool {
+    pub fn has_castling_rights_kingside_white(&self) -> bool {
         self.castling_rights & CAN_CASTLE_KINGSIDE_WHITE != 0
     }
 
     /// Returns true if the black kingside castling bitflag is set, and false otherwise.
-    pub fn can_castle_kingside_black(&self) -> bool {
+    pub fn has_castling_rights_kingside_black(&self) -> bool {
         self.castling_rights & CAN_CASTLE_KINGSIDE_BLACK != 0
     }
 
     /// Returns true if the white queenside castling bitflag is set, and false otherwise.
-    pub fn can_castle_queenside_white(&self) -> bool {
+    pub fn has_castling_rights_queenside_white(&self) -> bool {
         self.castling_rights & CAN_CASTLE_QUEENSIDE_WHITE != 0
     }
 
     /// Returns true if the black queenside castling bitflag is set, and false otherwise.
-    pub fn can_castle_queenside_black(&self) -> bool {
+    pub fn has_castling_rights_queenside_black(&self) -> bool {
         self.castling_rights & CAN_CASTLE_QUEENSIDE_BLACK != 0
     }
 }
