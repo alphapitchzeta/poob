@@ -1,16 +1,17 @@
 use crate::bitboards::*;
 use crate::boardstate::*;
-use crate::rende::print_bitboard;
-//use crate::util::*;
+use crate::movegen::*;
+use crate::rende::*;
+use crate::util::*;
 use crate::Color;
-use crate::util::read_move;
 
 const PROJECTED_GAME_LENGTH: usize = 40;
 
 #[derive(Debug)]
 pub struct Game {
-    pub board_state: BoardState,
+    board_state: BoardState,
     outcome: Option<Outcome>,
+    move_gen: MoveGenerator,
     history: BoardHistory,
 }
 
@@ -24,6 +25,7 @@ impl Game {
     pub fn new() -> Self {
         Self {
             board_state: BoardState::default(),
+            move_gen: MoveGenerator::new(),
             outcome: None,
             history: BoardHistory::new(),
         }
