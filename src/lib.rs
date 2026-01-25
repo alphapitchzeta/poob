@@ -21,6 +21,13 @@ impl Color {
             Color::Black => BLACK,
         }
     }
+
+    pub fn enemy(&self) -> Self {
+        match self {
+            Color::White => Color::Black,
+            Color::Black => Color::White,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
