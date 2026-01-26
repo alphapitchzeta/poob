@@ -54,6 +54,16 @@ pub mod bitboard_constants {
         pub const QUEEN: usize = 4;
         pub const KING: usize = 5;
     }
+
+    pub mod king_castle_squares {
+        pub const KINGSIDE_WHITE: u64 = 0b01100000;
+        pub const KINGSIDE_BLACK: u64 = 0b01100000 << 56;
+        pub const QUEENSIDE_WHITE: u64 = 0b00001100;
+        pub const QUEENSIDE_BLACK: u64 = 0b00001100 << 56;
+
+        pub const QUEENSIDE_ROOK_SQUARE_WHITE: u64 = 0b00000010;
+        pub const QUEENSIDE_ROOK_SQUARE_BLACK: u64 = 0b00000010 << 56;
+    }
 }
 
 use crate::moves::Move;
