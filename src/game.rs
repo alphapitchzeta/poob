@@ -1,37 +1,49 @@
-use crate::bitboards::*;
+use crate::bitboards::{bitboard_constants::king_castle_squares::*, *};
 use crate::boardstate::*;
 use crate::movegen::*;
 use crate::rende::*;
 use crate::util::*;
-use crate::Color;
+use crate::{Color, Piece};
 
 const PROJECTED_GAME_LENGTH: usize = 40;
 
 #[derive(Debug)]
-pub struct Game {
+pub struct Game<'a> {
     board_state: BoardState,
     outcome: Option<Outcome>,
-    move_gen: MoveGenerator,
-    history: BoardHistory,
+    move_gen: &'a MoveGenerator,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 enum Outcome {
     Win(Color),
     Draw,
 }
 
-impl Game {
-    pub fn new() -> Self {
+impl<'a> Game<'a> {
+    pub fn new(move_gen: &'a MoveGenerator) -> Self {
         Self {
             board_state: BoardState::default(),
-            move_gen: MoveGenerator::new(),
+            move_gen,
             outcome: None,
-            history: BoardHistory::new(),
         }
     }
 
+    pub fn from_fen(
+        fen: &str,
+        move_gen: &'a MoveGenerator,
+    ) -> Result<Self, BoardStateCreationError> {
+        Ok(Self {
+            board_state: BoardState::from_fen(fen)?,
+            move_gen,
+            outcome: None,
+        })
+    }
+
     pub fn play_sandbox(&mut self) {
+        let mut history = BoardHistory::new();
+
         while self.outcome == None {
             self.print();
 
@@ -39,7 +51,7 @@ impl Game {
                 continue;
             };
 
-            self.history.push(self.board_state.clone());
+            history.push(self.board_state.clone());
 
             self.get_mut_position().move_piece(mv);
 
@@ -69,13 +81,126 @@ impl Game {
     pub fn get_mut_position(&mut self) -> &mut BitBoards {
         &mut self.board_state.position
     }
+}
 
-    pub fn get_turn(&self, index: usize) -> Option<&BoardState> {
-        if index == 0 {
-            return None;
+impl Game<'_> {
+    pub fn get_enemy_attacks(&self, our_color: Color) -> u64 {
+        let mut attacks = 0;
+        let enemy_color = our_color.enemy();
+        let open_squares = !self.board_state.position.all_boards();
+
+        for square in 0..64 {
+            let piece = match self.board_state.position.piece_at(square) {
+                Some((color, piece)) if color == enemy_color => piece,
+                _ => continue,
+            };
+
+            attacks |= match (enemy_color, piece) {
+                (Color::Black, Piece::Pawn) => self.move_gen.get_black_pawn_attacks(square),
+                (Color::White, Piece::Pawn) => self.move_gen.get_white_pawn_attacks(square),
+                (_, Piece::Knight) => self.move_gen.get_knight_attacks(square),
+                (_, Piece::King) => self.move_gen.get_king_attacks(square),
+                (_, Piece::Rook) => MoveGenerator::get_rook_attacks(square, open_squares),
+                (_, Piece::Bishop) => MoveGenerator::get_bishop_attacks(square, open_squares),
+                (_, Piece::Queen) => MoveGenerator::get_queen_attacks(square, open_squares),
+            };
         }
 
-        self.history.get(index - 1)
+        attacks
+    }
+
+    /// Returns `true` if the white king is in check, and `false` otherwise.
+    pub fn is_in_check_white(&self, enemy_attacks: u64) -> bool {
+        self.board_state.position.king_white() & enemy_attacks != 0
+    }
+
+    /// Returns `true` if the black king is in check, and `false` otherwise.
+    pub fn is_in_check_black(&self, enemy_attacks: u64) -> bool {
+        self.board_state.position.king_black() & enemy_attacks != 0
+    }
+
+    /// Returns `true` if white can castle kingside, and `false` otherwise.
+    pub fn can_castle_kingside_white(&self, bitboard: u64, enemy_attacks: u64) -> bool {
+        if !self.board_state.has_castling_rights_kingside_white() {
+            return false;
+        }
+
+        if self.is_in_check_white(enemy_attacks) {
+            return false;
+        }
+
+        if bitboard & KINGSIDE_WHITE != 0 {
+            return false;
+        }
+
+        if enemy_attacks & KINGSIDE_WHITE != 0 {
+            return false;
+        }
+
+        true
+    }
+
+    /// Returns `true` if black can castle kingside, and `false` otherwise.
+    pub fn can_castle_kingside_black(&self, bitboard: u64, enemy_attacks: u64) -> bool {
+        if !self.board_state.has_castling_rights_kingside_black() {
+            return false;
+        }
+
+        if self.is_in_check_black(enemy_attacks) {
+            return false;
+        }
+
+        if bitboard & KINGSIDE_BLACK != 0 {
+            return false;
+        }
+
+        if enemy_attacks & KINGSIDE_BLACK != 0 {
+            return false;
+        }
+
+        true
+    }
+
+    /// Returns `true` if white can castle queenside, and `false` otherwise.
+    pub fn can_castle_queenside_white(&self, bitboard: u64, enemy_attacks: u64) -> bool {
+        if !self.board_state.has_castling_rights_queenside_white() {
+            return false;
+        }
+
+        if self.is_in_check_white(enemy_attacks) {
+            return false;
+        }
+
+        if bitboard & (QUEENSIDE_WHITE | QUEENSIDE_ROOK_SQUARE_WHITE) != 0 {
+            return false;
+        }
+
+        if enemy_attacks & QUEENSIDE_WHITE != 0 {
+            return false;
+        }
+
+        true
+    }
+
+    /// Returns `true` if black can castle queenside, and `false` otherwise.
+    pub fn can_castle_queenside_black(&self, bitboard: u64, enemy_attacks: u64) -> bool {
+        if !self.board_state.has_castling_rights_queenside_black() {
+            return false;
+        }
+
+        if self.is_in_check_black(enemy_attacks) {
+            return false;
+        }
+
+        if bitboard & (QUEENSIDE_BLACK | QUEENSIDE_ROOK_SQUARE_BLACK) != 0 {
+            return false;
+        }
+
+        if enemy_attacks & QUEENSIDE_BLACK != 0 {
+            return false;
+        }
+
+        true
     }
 }
 
@@ -103,5 +228,112 @@ impl BoardHistory {
 
     pub fn pop(&mut self) -> Option<BoardState> {
         self.vec.pop()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_enemy_attacks() {
+        let move_gen = MoveGenerator::new();
+        let game = Game::new(&move_gen);
+        let enemy_attacks = game.get_enemy_attacks(game.board_state.side_to_move);
+
+        assert_eq!(enemy_attacks.count_ones(), 22);
+    }
+
+    // TODO: Add more test cases
+    #[test]
+    fn test_is_in_check() {
+        let move_gen = MoveGenerator::new();
+        {
+            let game = Game::new(&move_gen);
+            let enemy_attacks = game.get_enemy_attacks(game.board_state.side_to_move);
+
+            assert_eq!(game.is_in_check_white(enemy_attacks), false);
+        }
+    }
+
+    // TODO: Add more test cases
+    #[test]
+    fn test_can_castle() {
+        let move_gen = MoveGenerator::new();
+
+        {
+            let fen = "rnbq1bnr/pppp1ppp/4k3/8/8/4K3/PPPP1PPP/RNBQ1BNR w - - 0 1";
+            let game = Game::from_fen(fen, &move_gen).expect("Invalid FEN");
+
+            let bitboard = game.board_state.position.all_boards();
+            let enemy_attacks = game.get_enemy_attacks(game.board_state.side_to_move);
+
+            assert_eq!(
+                game.can_castle_kingside_white(bitboard, enemy_attacks),
+                false
+            );
+            assert_eq!(
+                game.can_castle_kingside_black(bitboard, enemy_attacks),
+                false
+            );
+            assert_eq!(
+                game.can_castle_queenside_white(bitboard, enemy_attacks),
+                false
+            );
+            assert_eq!(
+                game.can_castle_queenside_black(bitboard, enemy_attacks),
+                false
+            );
+        }
+
+        {
+            let game = Game::new(&move_gen);
+
+            let bitboard = game.board_state.position.all_boards();
+            let enemy_attacks = game.get_enemy_attacks(game.board_state.side_to_move);
+
+            assert_eq!(
+                game.can_castle_kingside_white(bitboard, enemy_attacks),
+                false
+            );
+            assert_eq!(
+                game.can_castle_kingside_black(bitboard, enemy_attacks),
+                false
+            );
+            assert_eq!(
+                game.can_castle_queenside_white(bitboard, enemy_attacks),
+                false
+            );
+            assert_eq!(
+                game.can_castle_queenside_black(bitboard, enemy_attacks),
+                false
+            );
+        }
+
+        {
+            let fen = "r3k2r/pppq1ppp/2npbn2/1B2p3/1b2P3/2NPBN2/PPPQ1PPP/R3K2R w KQkq - 0 1";
+            let game = Game::from_fen(fen, &move_gen).expect("Invalid FEN");
+
+            let bitboard = game.board_state.position.all_boards();
+            let enemy_attacks = game.get_enemy_attacks(game.board_state.side_to_move);
+            let friendly_attacks = game.get_enemy_attacks(game.board_state.side_to_move.enemy());
+
+            assert_eq!(
+                game.can_castle_kingside_white(bitboard, enemy_attacks),
+                true
+            );
+            assert_eq!(
+                game.can_castle_kingside_black(bitboard, friendly_attacks),
+                true
+            );
+            assert_eq!(
+                game.can_castle_queenside_white(bitboard, enemy_attacks),
+                true
+            );
+            assert_eq!(
+                game.can_castle_queenside_black(bitboard, friendly_attacks),
+                true
+            );
+        }
     }
 }
