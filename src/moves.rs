@@ -21,7 +21,7 @@ pub mod move_constants {
 use crate::util::*;
 use move_constants::*;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Move(u16);
 
 impl Move {
@@ -63,11 +63,11 @@ impl Move {
         self.0 & DOUBLE_PAWN_PUSH == DOUBLE_PAWN_PUSH
     }
 
-    pub fn is_king_castle(&self) -> bool {
+    pub fn is_kingside_castle(&self) -> bool {
         self.0 & KING_CASTLE == KING_CASTLE
     }
 
-    pub fn is_queen_castle(&self) -> bool {
+    pub fn is_queenside_castle(&self) -> bool {
         self.0 & QUEEN_CASTLE == QUEEN_CASTLE
     }
 
