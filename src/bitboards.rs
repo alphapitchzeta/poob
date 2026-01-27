@@ -270,6 +270,16 @@ impl BitBoards {
         self.all_boards().count_ones()
     }
 
+    /// "Clears" the square from all bitboards, setting the bit at that
+    /// potiion to 0.
+    pub fn clear_square(&mut self, square: u8) {
+        let clear_mask = !(1 << square);
+
+        for board in self.boards.iter_mut().flatten() {
+            *board &= clear_mask;
+        }
+    }
+
     pub fn square_to_bitboard(square: u8) -> Result<u64, BitBoardConversionError> {
         if square > 63 {
             return Err(BitBoardConversionError::BadSquare);
@@ -421,9 +431,9 @@ impl BitBoards {
         let initial_bitboard = BitBoards::unchecked_square_to_bitboard(initial_square);
         let target_bitboard = BitBoards::unchecked_square_to_bitboard(target_square);
 
-        self.boards[WHITE][PAWN] ^= initial_bitboard | target_bitboard;
+        self.clear_square(target_square);
 
-        self.boards[BLACK][PAWN] &= target_bitboard >> 8;
+        self.boards[WHITE][PAWN] ^= initial_bitboard | target_bitboard;
     }
 
     // TODO: ^v TEST BOTH OF THESE
@@ -436,9 +446,57 @@ impl BitBoards {
         let initial_bitboard = BitBoards::unchecked_square_to_bitboard(initial_square);
         let target_bitboard = BitBoards::unchecked_square_to_bitboard(target_square);
 
-        self.boards[BLACK][PAWN] ^= initial_bitboard | target_bitboard;
+        self.clear_square(target_square);
 
-        self.boards[WHITE][PAWN] &= target_bitboard << 8;
+        self.boards[BLACK][PAWN] ^= initial_bitboard | target_bitboard;
+    }
+
+    /// Performs a promotion move for white. Removes the pawn from the initial square
+    /// and places the piece specified in the move in the target square.
+    pub fn promote_white(&mut self, mv: Move) {
+        let promote_to = if mv.is_queen_promotion() {
+            QUEEN
+        } else if mv.is_knight_promotion(){
+            KNIGHT
+        } else if mv.is_rook_promotion() {
+            ROOK
+        } else {
+            BISHOP
+        };
+
+        let (initial_square, target_square) = (mv.get_initial_square(), mv.get_target_square());
+        self.clear_square(target_square);
+
+        let initial_bitboard = BitBoards::unchecked_square_to_bitboard(initial_square);
+        let target_bitboard = BitBoards::unchecked_square_to_bitboard(target_square);
+
+        self.boards[WHITE][PAWN] ^= initial_bitboard;
+        self.boards[WHITE][promote_to] ^= target_bitboard;
+    }
+
+    // TODO: ^v TEST BOTH OF THESE
+
+    /// Performs a promotion move for black. Removes the pawn from the initial square
+    /// and places the piece specified in the move in the target square.
+    pub fn promote_black(&mut self, mv: Move) {
+        let promote_to = if mv.is_queen_promotion() {
+            QUEEN
+        } else if mv.is_knight_promotion(){
+            KNIGHT
+        } else if mv.is_rook_promotion() {
+            ROOK
+        } else {
+            BISHOP
+        };
+
+        let (initial_square, target_square) = (mv.get_initial_square(), mv.get_target_square());
+        self.clear_square(target_square);
+
+        let initial_bitboard = BitBoards::unchecked_square_to_bitboard(initial_square);
+        let target_bitboard = BitBoards::unchecked_square_to_bitboard(target_square);
+
+        self.boards[BLACK][PAWN] ^= initial_bitboard;
+        self.boards[BLACK][promote_to] ^= target_bitboard;
     }
 }
 
