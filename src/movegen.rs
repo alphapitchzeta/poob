@@ -1,7 +1,11 @@
 use crate::bitboards::bitboard_constants::rank_file::*;
 
+/// Constants used in move generation.
 pub mod movegen_constants {
     use super::*;
+
+    /// Constants used to exclude certain ranks and files
+    /// (useful for preventing wraps).
     pub mod rank_file_exclusions {
         use super::*;
 
@@ -22,6 +26,8 @@ pub mod movegen_constants {
 
 use movegen_constants::rank_file_exclusions::*;
 
+/// Struct encapsulating the lookup tables and attack generation
+/// for all pieces.
 #[derive(Debug)]
 pub struct MoveGenerator {
     white_pawn_moves: [u64; 64],
@@ -68,6 +74,8 @@ impl MoveGenerator {
         self.king_attacks[square as usize]
     }
 
+    /// Calculates all squares a rook is attacking from the given square.
+    /// Current implementation uses dumb7fill.
     pub fn get_rook_attacks(square: u8, open_squares: u64) -> u64 {
         let rook = 1 << square;
         let mut attacks = 0;
@@ -119,6 +127,8 @@ impl MoveGenerator {
         attacks
     }
 
+    /// Calculates all squares a bishop is attacking from the given square.
+    /// Current implementation uses dumb7fill.
     pub fn get_bishop_attacks(square: u8, open_squares: u64) -> u64 {
         let bishop = 1 << square;
         let mut attacks = 0;
@@ -170,12 +180,16 @@ impl MoveGenerator {
         attacks
     }
 
+    /// Calculates all squares a queen is attacking from the given square.
+    /// Current implementation uses dumb7fill.
     pub fn get_queen_attacks(square: u8, open_squares: u64) -> u64 {
         MoveGenerator::get_bishop_attacks(square, open_squares)
             | MoveGenerator::get_rook_attacks(square, open_squares)
     }
 }
 
+/// Generates and returns a lookup table of every non-capture move a
+/// white pawn can make from each square on the board.
 pub fn compute_white_pawn_moves() -> [u64; 64] {
     let mut moves = [0; 64];
 
@@ -192,6 +206,8 @@ pub fn compute_white_pawn_moves() -> [u64; 64] {
     moves
 }
 
+/// Generates and returns a lookup table of every non-capture move a
+/// black pawn can make from each square on the board.
 pub fn compute_black_pawn_moves() -> [u64; 64] {
     let mut moves = [0; 64];
 
@@ -208,6 +224,8 @@ pub fn compute_black_pawn_moves() -> [u64; 64] {
     moves
 }
 
+/// Generates and returns a lookup table of every square a white pawn
+/// is attacking from each square on the board.
 pub fn compute_white_pawn_attacks() -> [u64; 64] {
     let mut attacks = [0; 64];
 
@@ -220,6 +238,8 @@ pub fn compute_white_pawn_attacks() -> [u64; 64] {
     attacks
 }
 
+/// Generates and returns a lookup table of every square a black pawn
+/// is attacking from each square on the board.
 pub fn compute_black_pawn_attacks() -> [u64; 64] {
     let mut attacks = [0; 64];
 
@@ -232,6 +252,9 @@ pub fn compute_black_pawn_attacks() -> [u64; 64] {
     attacks
 }
 
+/// Generates and returns a lookup table of every move a knight can make
+/// (and therefore every square it is attacking) from each square on the
+/// board.
 pub fn compute_knight_attacks() -> [u64; 64] {
     let mut attacks = [0; 64];
 
@@ -251,6 +274,9 @@ pub fn compute_knight_attacks() -> [u64; 64] {
     attacks
 }
 
+/// Generates and returns a lookup table of every move a king can make
+/// (and therefore every square it is attacking) from each square on the
+/// board.
 pub fn compute_king_attacks() -> [u64; 64] {
     let mut attacks = [0; 64];
 
