@@ -431,7 +431,7 @@ impl BitBoards {
         let initial_bitboard = BitBoards::unchecked_square_to_bitboard(initial_square);
         let target_bitboard = BitBoards::unchecked_square_to_bitboard(target_square);
 
-        self.clear_square(target_square);
+        self.clear_square(target_square - 8);
 
         self.boards[WHITE][PAWN] ^= initial_bitboard | target_bitboard;
     }
@@ -446,7 +446,7 @@ impl BitBoards {
         let initial_bitboard = BitBoards::unchecked_square_to_bitboard(initial_square);
         let target_bitboard = BitBoards::unchecked_square_to_bitboard(target_square);
 
-        self.clear_square(target_square);
+        self.clear_square(target_square + 8);
 
         self.boards[BLACK][PAWN] ^= initial_bitboard | target_bitboard;
     }
@@ -456,7 +456,7 @@ impl BitBoards {
     pub fn promote_white(&mut self, mv: Move) {
         let promote_to = if mv.is_queen_promotion() {
             QUEEN
-        } else if mv.is_knight_promotion(){
+        } else if mv.is_knight_promotion() {
             KNIGHT
         } else if mv.is_rook_promotion() {
             ROOK
@@ -481,7 +481,7 @@ impl BitBoards {
     pub fn promote_black(&mut self, mv: Move) {
         let promote_to = if mv.is_queen_promotion() {
             QUEEN
-        } else if mv.is_knight_promotion(){
+        } else if mv.is_knight_promotion() {
             KNIGHT
         } else if mv.is_rook_promotion() {
             ROOK
