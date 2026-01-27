@@ -55,20 +55,37 @@ pub mod bitboard_constants {
         pub const KING: usize = 5;
     }
 
-    pub mod king_castle_squares {
-        pub const KINGSIDE_WHITE: u64 = 0b01100000;
-        pub const KINGSIDE_BLACK: u64 = 0b01100000 << 56;
-        pub const QUEENSIDE_WHITE: u64 = 0b00001100;
-        pub const QUEENSIDE_BLACK: u64 = 0b00001100 << 56;
+    pub mod castle_squares {
+        pub const KINGSIDE_WHITE_KING_TARGET_SQUARE: u64 = 0b01000000;
+        pub const KINGSIDE_BLACK_KING_TARGET_SQUARE: u64 = 0b01000000 << 56;
+        pub const QUEENSIDE_WHITE_KING_TARGET_SQUARE: u64 = 0b00000100;
+        pub const QUEENSIDE_BLACK_KING_TARGET_SQUARE: u64 = 0b00000100 << 56;
+
+        pub const KINGSIDE_WHITE_ROOK_TARGET_SQUARE: u64 = 0b00100000;
+        pub const KINGSIDE_BLACK_ROOK_TARGET_SQUARE: u64 = 0b00100000 << 56;
+        pub const QUEENSIDE_WHITE_ROOK_TARGET_SQUARE: u64 = 0b00001000;
+        pub const QUEENSIDE_BLACK_ROOK_TARGET_SQUARE: u64 = 0b00001000 << 56;
+
+        pub const KINGSIDE_WHITE_SQUARES: u64 = 0b01100000;
+        pub const KINGSIDE_BLACK_SQUARES: u64 = 0b01100000 << 56;
+        pub const QUEENSIDE_WHITE_SQUARES: u64 = 0b00001100;
+        pub const QUEENSIDE_BLACK_SQUARES: u64 = 0b00001100 << 56;
 
         pub const QUEENSIDE_ROOK_SQUARE_WHITE: u64 = 0b00000010;
         pub const QUEENSIDE_ROOK_SQUARE_BLACK: u64 = 0b00000010 << 56;
+    }
+
+    pub mod masks {
+        pub const NOT_KINGSIDE_WHITE_ROOK_START_SQUARE: u64 = !0b10000000;
+        pub const NOT_KINGSIDE_BLACK_ROOK_START_SQUARE: u64 = !(0b10000000 << 56);
+        pub const NOT_QUEENSIDE_WHITE_ROOK_START_SQUARE: u64 = !1;
+        pub const NOT_QUEENSIDE_BLACK_ROOK_START_SQUARE: u64 = !(1 << 56);
     }
 }
 
 use crate::moves::Move;
 use crate::{Color, Piece};
-use bitboard_constants::{bitboard_indices::*, starting_positions::*};
+use bitboard_constants::{bitboard_indices::*, castle_squares::*, masks::*, starting_positions::*};
 
 // Error variants when constructing a new bitboard
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -261,12 +278,20 @@ impl BitBoards {
         Ok(1 << square)
     }
 
+    pub fn unchecked_square_to_bitboard(square: u8) -> u64 {
+        1 << square
+    }
+
     pub fn bitboard_to_square(bitboard: u64) -> Result<u8, BitBoardConversionError> {
         if bitboard.count_ones() != 1 {
             return Err(BitBoardConversionError::BadBitboard);
         }
 
         Ok(bitboard.trailing_zeros() as u8)
+    }
+
+    pub fn unchecked_bitboard_to_square(bitboard: u64) -> u8 {
+        bitboard.trailing_zeros() as u8
     }
 
     pub fn piece_at(&self, square: u8) -> Option<(Color, Piece)> {
@@ -327,11 +352,6 @@ impl BitBoards {
 
     /// Updates the bitboards of the piece type and color of the initial square specified in the move,
     /// "moving" it to the target square and replacing any piece present there.
-    ///
-    /// # Panics
-    /// Currently calls `expect` on `square_to_bitboard`.
-
-    // TODO: Consider adding an unchecked version of the square to bitboard helper function.
     pub fn move_piece(&mut self, move_attempt: Move) {
         let (initial_square, target_square) = (
             move_attempt.get_initial_square(),
@@ -342,9 +362,8 @@ impl BitBoards {
             return;
         };
 
-        let initial_bitboard =
-            BitBoards::square_to_bitboard(initial_square).expect("Invalid square");
-        let target_bitboard = BitBoards::square_to_bitboard(target_square).expect("Invalid square");
+        let initial_bitboard = BitBoards::unchecked_square_to_bitboard(initial_square);
+        let target_bitboard = BitBoards::unchecked_square_to_bitboard(target_square);
 
         if let Some((target_color, target_piece)) = self.piece_at(target_square) {
             self.boards[target_color.to_index()][target_piece.to_index()] ^= target_bitboard;
@@ -352,6 +371,74 @@ impl BitBoards {
 
         self.boards[initial_color.to_index()][initial_piece.to_index()] ^=
             initial_bitboard | target_bitboard;
+    }
+
+    /// Sets the white king and white kingside rook to their castle target squares.
+    /// Currently this is completely unchecked, and may result in overlapping
+    /// bitboards.
+    pub fn castle_kingside_white(&mut self) {
+        self.boards[WHITE][KING] = KINGSIDE_WHITE_KING_TARGET_SQUARE;
+
+        self.boards[WHITE][ROOK] &= NOT_KINGSIDE_WHITE_ROOK_START_SQUARE;
+        self.boards[WHITE][ROOK] |= KINGSIDE_WHITE_ROOK_TARGET_SQUARE;
+    }
+
+    /// Sets the black king and black kingside rook to their castle target squares.
+    /// Currently this is completely unchecked, and may result in overlapping
+    /// bitboards.
+    pub fn castle_kingside_black(&mut self) {
+        self.boards[BLACK][KING] = KINGSIDE_BLACK_KING_TARGET_SQUARE;
+
+        self.boards[BLACK][ROOK] &= NOT_KINGSIDE_BLACK_ROOK_START_SQUARE;
+        self.boards[BLACK][ROOK] |= KINGSIDE_BLACK_ROOK_TARGET_SQUARE;
+    }
+
+    /// Sets the white king and white queenside rook to their castle target squares.
+    /// Currently this is completely unchecked, and may result in overlapping
+    /// bitboards.
+    pub fn castle_queenside_white(&mut self) {
+        self.boards[WHITE][KING] = QUEENSIDE_WHITE_KING_TARGET_SQUARE;
+
+        self.boards[WHITE][ROOK] &= NOT_QUEENSIDE_WHITE_ROOK_START_SQUARE;
+        self.boards[WHITE][ROOK] |= QUEENSIDE_WHITE_ROOK_TARGET_SQUARE;
+    }
+
+    /// Sets the black king and black queenside rook to their castle target squares.
+    /// Currently this is completely unchecked, and may result in overlapping
+    /// bitboards.
+    pub fn castle_queenside_black(&mut self) {
+        self.boards[BLACK][KING] = QUEENSIDE_BLACK_KING_TARGET_SQUARE;
+
+        self.boards[BLACK][ROOK] &= NOT_QUEENSIDE_BLACK_ROOK_START_SQUARE;
+        self.boards[BLACK][ROOK] |= QUEENSIDE_BLACK_ROOK_TARGET_SQUARE;
+    }
+
+    /// "Moves" the white pawn in the initial square to the target square, "capturing"
+    /// any black pawn behind it.
+    pub fn en_passant_white(&mut self, mv: Move) {
+        let (initial_square, target_square) = (mv.get_initial_square(), mv.get_target_square());
+
+        let initial_bitboard = BitBoards::unchecked_square_to_bitboard(initial_square);
+        let target_bitboard = BitBoards::unchecked_square_to_bitboard(target_square);
+
+        self.boards[WHITE][PAWN] ^= initial_bitboard | target_bitboard;
+
+        self.boards[BLACK][PAWN] &= target_bitboard >> 8;
+    }
+
+    // TODO: ^v TEST BOTH OF THESE
+
+    /// "Moves" the black pawn in the initial square to the target square, "capturing"
+    /// any white pawn behind it.
+    pub fn en_passant_black(&mut self, mv: Move) {
+        let (initial_square, target_square) = (mv.get_initial_square(), mv.get_target_square());
+
+        let initial_bitboard = BitBoards::unchecked_square_to_bitboard(initial_square);
+        let target_bitboard = BitBoards::unchecked_square_to_bitboard(target_square);
+
+        self.boards[BLACK][PAWN] ^= initial_bitboard | target_bitboard;
+
+        self.boards[WHITE][PAWN] &= target_bitboard << 8;
     }
 }
 
