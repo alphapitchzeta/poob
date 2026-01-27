@@ -1,4 +1,4 @@
-use crate::bitboards::{bitboard_constants::king_castle_squares::*, *};
+use crate::bitboards::{bitboard_constants::castle_squares::*, *};
 use crate::boardstate::*;
 use crate::movegen::*;
 use crate::rende::*;
@@ -84,18 +84,19 @@ impl<'a> Game<'a> {
 }
 
 impl Game<'_> {
-    pub fn get_enemy_attacks(&self, our_color: Color) -> u64 {
+    /// Returns a `u64` bitboard of all squares being attacked by pieces of a given color.
+    /// This includes squares currently occupied by other friendly pieces.
+    pub fn get_attacks(&self, checked_color: Color) -> u64 {
         let mut attacks = 0;
-        let enemy_color = our_color.enemy();
         let open_squares = !self.board_state.position.all_boards();
 
         for square in 0..64 {
             let piece = match self.board_state.position.piece_at(square) {
-                Some((color, piece)) if color == enemy_color => piece,
+                Some((color, piece)) if color == checked_color => piece,
                 _ => continue,
             };
 
-            attacks |= match (enemy_color, piece) {
+            attacks |= match (checked_color, piece) {
                 (Color::Black, Piece::Pawn) => self.move_gen.get_black_pawn_attacks(square),
                 (Color::White, Piece::Pawn) => self.move_gen.get_white_pawn_attacks(square),
                 (_, Piece::Knight) => self.move_gen.get_knight_attacks(square),
@@ -129,11 +130,11 @@ impl Game<'_> {
             return false;
         }
 
-        if bitboard & KINGSIDE_WHITE != 0 {
+        if bitboard & KINGSIDE_WHITE_SQUARES != 0 {
             return false;
         }
 
-        if enemy_attacks & KINGSIDE_WHITE != 0 {
+        if enemy_attacks & KINGSIDE_WHITE_SQUARES != 0 {
             return false;
         }
 
@@ -150,11 +151,11 @@ impl Game<'_> {
             return false;
         }
 
-        if bitboard & KINGSIDE_BLACK != 0 {
+        if bitboard & KINGSIDE_BLACK_SQUARES != 0 {
             return false;
         }
 
-        if enemy_attacks & KINGSIDE_BLACK != 0 {
+        if enemy_attacks & KINGSIDE_BLACK_SQUARES != 0 {
             return false;
         }
 
@@ -171,11 +172,11 @@ impl Game<'_> {
             return false;
         }
 
-        if bitboard & (QUEENSIDE_WHITE | QUEENSIDE_ROOK_SQUARE_WHITE) != 0 {
+        if bitboard & (QUEENSIDE_WHITE_SQUARES | QUEENSIDE_ROOK_SQUARE_WHITE) != 0 {
             return false;
         }
 
-        if enemy_attacks & QUEENSIDE_WHITE != 0 {
+        if enemy_attacks & QUEENSIDE_WHITE_SQUARES != 0 {
             return false;
         }
 
@@ -192,11 +193,11 @@ impl Game<'_> {
             return false;
         }
 
-        if bitboard & (QUEENSIDE_BLACK | QUEENSIDE_ROOK_SQUARE_BLACK) != 0 {
+        if bitboard & (QUEENSIDE_BLACK_SQUARES | QUEENSIDE_ROOK_SQUARE_BLACK) != 0 {
             return false;
         }
 
-        if enemy_attacks & QUEENSIDE_BLACK != 0 {
+        if enemy_attacks & QUEENSIDE_BLACK_SQUARES != 0 {
             return false;
         }
 
@@ -239,7 +240,7 @@ mod tests {
     fn test_get_enemy_attacks() {
         let move_gen = MoveGenerator::new();
         let game = Game::new(&move_gen);
-        let enemy_attacks = game.get_enemy_attacks(game.board_state.side_to_move);
+        let enemy_attacks = game.get_attacks(game.board_state.side_to_move.enemy());
 
         assert_eq!(enemy_attacks.count_ones(), 22);
     }
@@ -248,11 +249,20 @@ mod tests {
     #[test]
     fn test_is_in_check() {
         let move_gen = MoveGenerator::new();
+
         {
             let game = Game::new(&move_gen);
-            let enemy_attacks = game.get_enemy_attacks(game.board_state.side_to_move);
+            let enemy_attacks = game.get_attacks(game.board_state.side_to_move.enemy());
 
             assert_eq!(game.is_in_check_white(enemy_attacks), false);
+        }
+
+        {
+            let fen = "rnbqkbnr/pppp1ppp/8/8/8/8/PPPPQPPP/RNB1KBNR b KQkq - 0 1";
+            let game = Game::from_fen(fen, &move_gen).expect("Invalid FEN");
+            let enemy_attacks = game.get_attacks(game.board_state.side_to_move.enemy());
+
+            assert_eq!(game.is_in_check_black(enemy_attacks), true);
         }
     }
 
@@ -266,7 +276,7 @@ mod tests {
             let game = Game::from_fen(fen, &move_gen).expect("Invalid FEN");
 
             let bitboard = game.board_state.position.all_boards();
-            let enemy_attacks = game.get_enemy_attacks(game.board_state.side_to_move);
+            let enemy_attacks = game.get_attacks(game.board_state.side_to_move.enemy());
 
             assert_eq!(
                 game.can_castle_kingside_white(bitboard, enemy_attacks),
@@ -290,7 +300,7 @@ mod tests {
             let game = Game::new(&move_gen);
 
             let bitboard = game.board_state.position.all_boards();
-            let enemy_attacks = game.get_enemy_attacks(game.board_state.side_to_move);
+            let enemy_attacks = game.get_attacks(game.board_state.side_to_move.enemy());
 
             assert_eq!(
                 game.can_castle_kingside_white(bitboard, enemy_attacks),
@@ -315,8 +325,8 @@ mod tests {
             let game = Game::from_fen(fen, &move_gen).expect("Invalid FEN");
 
             let bitboard = game.board_state.position.all_boards();
-            let enemy_attacks = game.get_enemy_attacks(game.board_state.side_to_move);
-            let friendly_attacks = game.get_enemy_attacks(game.board_state.side_to_move.enemy());
+            let enemy_attacks = game.get_attacks(game.board_state.side_to_move.enemy());
+            let friendly_attacks = game.get_attacks(game.board_state.side_to_move);
 
             assert_eq!(
                 game.can_castle_kingside_white(bitboard, enemy_attacks),
