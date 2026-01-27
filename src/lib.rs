@@ -8,6 +8,7 @@ pub mod util;
 
 use crate::bitboards::bitboard_constants::bitboard_indices::*;
 
+/// Represents one of the two playable colors (white or black).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Color {
     Black,
@@ -15,6 +16,8 @@ pub enum Color {
 }
 
 impl Color {
+    /// Helper method that maps each enum variant to its corresponding
+    /// bitboard index constant.
     pub fn to_index(&self) -> usize {
         match self {
             Color::White => WHITE,
@@ -22,6 +25,7 @@ impl Color {
         }
     }
 
+    /// Helper method that returns the enemy color.
     pub fn enemy(&self) -> Self {
         match self {
             Color::White => Color::Black,
@@ -30,6 +34,7 @@ impl Color {
     }
 }
 
+/// Represents the possible piece types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Piece {
     Pawn,
@@ -41,6 +46,8 @@ pub enum Piece {
 }
 
 impl Piece {
+    /// Helper method that maps each enum variant to its corresponding
+    /// bitboard index constant.
     pub fn to_index(&self) -> usize {
         match self {
             Piece::Pawn => PAWN,
