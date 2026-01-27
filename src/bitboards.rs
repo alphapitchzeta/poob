@@ -1,5 +1,6 @@
-// Constants for initializing and interacting with bitboards
+/// Constants for initializing and interacting with bitboards
 pub mod bitboard_constants {
+    /// Constants of the starting positions for each piece and color.
     pub mod starting_positions {
         pub const DEFAULT_PAWNS_WHITE: u64 = 0b11111111 << 8;
         pub const DEFAULT_PAWNS_BLACK: u64 = 0b11111111 << 48;
@@ -15,6 +16,7 @@ pub mod bitboard_constants {
         pub const DEFAULT_KING_BLACK: u64 = 0b00010000 << 56;
     }
 
+    /// Masks of each rank and file.
     pub mod rank_file {
         pub const RANK_1: u64 = 0b11111111;
         pub const RANK_2: u64 = 0b11111111 << 8;
@@ -43,6 +45,7 @@ pub mod bitboard_constants {
             1 << 7 | 1 << 15 | 1 << 23 | 1 << 31 | 1 << 39 | 1 << 47 | 1 << 55 | 1 << 63;
     }
 
+    /// Constants mapping each color and piece to a corresponding index in a `[[u64; 6]; 2]`.
     pub mod bitboard_indices {
         pub const WHITE: usize = 0;
         pub const BLACK: usize = 1;
@@ -55,6 +58,7 @@ pub mod bitboard_constants {
         pub const KING: usize = 5;
     }
 
+    /// Masks of squares relevant for castling.
     pub mod castle_squares {
         pub const KINGSIDE_WHITE_KING_TARGET_SQUARE: u64 = 0b01000000;
         pub const KINGSIDE_BLACK_KING_TARGET_SQUARE: u64 = 0b01000000 << 56;
@@ -75,6 +79,7 @@ pub mod bitboard_constants {
         pub const QUEENSIDE_ROOK_SQUARE_BLACK: u64 = 0b00000010 << 56;
     }
 
+    /// Various useful masks.
     pub mod masks {
         pub const NOT_KINGSIDE_WHITE_ROOK_START_SQUARE: u64 = !0b10000000;
         pub const NOT_KINGSIDE_BLACK_ROOK_START_SQUARE: u64 = !(0b10000000 << 56);
@@ -159,6 +164,7 @@ impl BitBoards {
         Ok(Self { boards })
     }
 
+    /// Returns the bitboard representing all pieces in the current position.
     pub fn all_boards(&self) -> u64 {
         self.boards
             .iter()
@@ -266,12 +272,13 @@ impl BitBoards {
         self.boards[BLACK].iter().fold(0, |acc, e| acc | *e)
     }
 
+    /// Returns the total piece count.
     pub fn total_pieces(&self) -> u32 {
         self.all_boards().count_ones()
     }
 
     /// "Clears" the square from all bitboards, setting the bit at that
-    /// potiion to 0.
+    /// position to 0.
     pub fn clear_square(&mut self, square: u8) {
         let clear_mask = !(1 << square);
 
@@ -304,6 +311,8 @@ impl BitBoards {
         bitboard.trailing_zeros() as u8
     }
 
+    /// Returns `Some((Color, Piece))` of the piece on a given square, or `None`
+    /// if that square is unoccupied.
     pub fn piece_at(&self, square: u8) -> Option<(Color, Piece)> {
         let Ok(bitboard) = BitBoards::square_to_bitboard(square) else {
             return None;
