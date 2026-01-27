@@ -1,13 +1,14 @@
 use crate::bitboards::{bitboard_constants::castle_squares::*, *};
 use crate::boardstate::*;
 use crate::movegen::*;
+use crate::moves::*;
 use crate::rende::*;
 use crate::util::*;
 use crate::{Color, Piece};
 
 const PROJECTED_GAME_LENGTH: usize = 40;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Game<'a> {
     board_state: BoardState,
     outcome: Option<Outcome>,
@@ -118,6 +119,30 @@ impl Game<'_> {
     /// Returns `true` if the black king is in check, and `false` otherwise.
     pub fn is_in_check_black(&self, enemy_attacks: u64) -> bool {
         self.board_state.position.king_black() & enemy_attacks != 0
+    }
+
+    /// Returns `true` if the provided move would but the white king in check,
+    /// and `false` otherwise.
+    pub fn would_check_white(&self, mv: Move) -> bool {
+        let mut next_turn = self.clone();
+
+        next_turn.board_state.make_move(mv);
+
+        let enemy_attacks = next_turn.get_attacks(Color::Black);
+
+        next_turn.is_in_check_white(enemy_attacks)
+    }
+
+    /// Returns `true` if the provided move would but the black king in check,
+    /// and `false` otherwise.
+    pub fn would_check_black(&self, mv: Move) -> bool {
+        let mut next_turn = self.clone();
+
+        next_turn.board_state.make_move(mv);
+
+        let enemy_attacks = next_turn.get_attacks(Color::White);
+
+        next_turn.is_in_check_black(enemy_attacks)
     }
 
     /// Returns `true` if white can castle kingside, and `false` otherwise.
