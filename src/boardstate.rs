@@ -1,5 +1,6 @@
 use crate::bitboards::bitboard_constants::bitboard_indices::*;
 use crate::bitboards::{BitBoardCreationError, BitBoards};
+use crate::moves::*;
 use crate::util::*;
 use crate::{Color, Piece};
 
@@ -375,6 +376,58 @@ impl BoardState {
     /// Returns true if the black queenside castling bitflag is set, and false otherwise.
     pub fn has_castling_rights_queenside_black(&self) -> bool {
         self.castling_rights & CAN_CASTLE_QUEENSIDE_BLACK != 0
+    }
+
+    /// The primary move-making function. Takes a `Move` and updates the boardstate
+    /// accordingly.
+    pub fn make_move(&mut self, mv: Move) {
+        let (moved_color, moved_piece) = self
+            .position
+            .piece_at(mv.get_initial_square())
+            .unwrap_or((self.side_to_move, Piece::Pawn));
+
+        self.en_passant_square = None;
+        
+        match moved_color {
+            Color::White => {
+                if mv.is_kingside_castle() {
+                    self.position.castle_kingside_white();
+                } else if mv.is_queenside_castle() {
+                    self.position.castle_queenside_white();
+                } else if mv.is_en_passant_capture() {
+                    self.position.en_passant_white(mv);
+                } else if mv.is_promotion() {
+                    self.position.promote_white(mv);
+                } else if mv.is_double_pawn_push() {
+                    self.en_passant_square = Some(mv.get_initial_square() + 8);
+                } else {
+                    self.make_move(mv);
+                }
+            }
+            Color::Black => {
+                if mv.is_kingside_castle() {
+                    self.position.castle_kingside_black();
+                } else if mv.is_queenside_castle() {
+                    self.position.castle_queenside_black();
+                } else if mv.is_en_passant_capture() {
+                    self.position.en_passant_black(mv);
+                } else if mv.is_promotion() {
+                    self.position.promote_black(mv);
+                } else if mv.is_double_pawn_push() {
+                    self.en_passant_square = Some(mv.get_initial_square() - 8);
+                } else {
+                    self.make_move(mv);
+                }
+            }
+        };
+
+        if moved_piece == Piece::Pawn || mv.is_capture() {
+            self.fifty_move_rule = 0;
+        } else {
+            self.fifty_move_rule += 1;
+        }
+
+        self.turn_count += 1;
     }
 }
 
