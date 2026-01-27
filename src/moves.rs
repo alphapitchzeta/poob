@@ -7,6 +7,7 @@ pub mod move_constants {
     pub const QUEEN_CASTLE: u16 = 0b0011 << 12;
     pub const CAPTURE: u16 = 0b0100 << 12;
     pub const EN_PASSANT_CAPTURE: u16 = 0b0101 << 12;
+    pub const PROMOTION: u16 = 0b1000 << 12;
     pub const KNIGHT_PROMOTION: u16 = 0b1000 << 12;
     pub const BISHOP_PROMOTION: u16 = 0b1001 << 12;
     pub const ROOK_PROMOTION: u16 = 0b1010 << 12;
@@ -55,7 +56,7 @@ impl Move {
     }
 
     pub fn is_quiet(&self) -> bool {
-        self.0 & QUIET_MOVE == QUIET_MOVE
+        (self.0 >> 12) & QUIET_MOVE == QUIET_MOVE
     }
 
     pub fn is_double_pawn_push(&self) -> bool {
@@ -76,6 +77,10 @@ impl Move {
 
     pub fn is_en_passant_capture(&self) -> bool {
         self.0 & EN_PASSANT_CAPTURE == EN_PASSANT_CAPTURE
+    }
+
+    pub fn is_promotion(&self) -> bool {
+        self.0 & PROMOTION == PROMOTION
     }
 
     pub fn is_knight_promotion(&self) -> bool {
