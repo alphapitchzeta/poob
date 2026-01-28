@@ -1,4 +1,7 @@
-use crate::bitboards::{bitboard_constants::castle_squares::*, *};
+use crate::bitboards::{
+    bitboard_constants::{castle_squares::*, rank_file::*},
+    *,
+};
 use crate::boardstate::*;
 use crate::movegen::*;
 use crate::moves::*;
@@ -8,6 +11,7 @@ use crate::{Color, Piece};
 
 const PROJECTED_GAME_LENGTH: usize = 40;
 
+/// Struct encapsulating the game logic.
 #[derive(Debug, Clone)]
 pub struct Game<'a> {
     board_state: BoardState,
@@ -15,9 +19,10 @@ pub struct Game<'a> {
     move_gen: &'a MoveGenerator,
 }
 
+/// Represents the possible outcomes of a game.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[allow(dead_code)]
-enum Outcome {
+pub enum Outcome {
     Win(Color),
     Draw,
 }
@@ -121,7 +126,7 @@ impl Game<'_> {
         self.board_state.position.king_black() & enemy_attacks != 0
     }
 
-    /// Returns `true` if the provided move would but the white king in check,
+    /// Returns `true` if the provided move would put the white king in check,
     /// and `false` otherwise.
     pub fn would_check_white(&self, mv: Move) -> bool {
         let mut next_turn = self.clone();
@@ -133,7 +138,7 @@ impl Game<'_> {
         next_turn.is_in_check_white(enemy_attacks)
     }
 
-    /// Returns `true` if the provided move would but the black king in check,
+    /// Returns `true` if the provided move would put the black king in check,
     /// and `false` otherwise.
     pub fn would_check_black(&self, mv: Move) -> bool {
         let mut next_turn = self.clone();
@@ -227,6 +232,221 @@ impl Game<'_> {
         }
 
         true
+    }
+
+    pub fn enumerate_moves(&self) -> MoveList {
+        let mut moves = MoveList::new();
+
+        match self.board_state.side_to_move {
+            Color::White => {
+                let friendly_pieces = self.board_state.position.white();
+                let enemy_pieces = self.board_state.position.black();
+                //let enemy_attacks = self.get_attacks(Color::Black);
+
+                for initial_square in 0..64 {
+                    match self.board_state.position.piece_at(initial_square) {
+                        Some((Color::White, Piece::Pawn)) => {
+                            moves.append(self.enumerate_white_pawn_moves(
+                                initial_square,
+                                friendly_pieces,
+                                enemy_pieces,
+                            ))
+                        }
+
+                        _ => continue,
+                    };
+                }
+            }
+            Color::Black => {
+                let friendly_pieces = self.board_state.position.black();
+                let enemy_pieces = self.board_state.position.black();
+
+                for initial_square in 0..64 {
+                    match self.board_state.position.piece_at(initial_square) {
+                        Some((Color::Black, Piece::Pawn)) => {
+                            moves.append(self.enumerate_white_pawn_moves(
+                                initial_square,
+                                friendly_pieces,
+                                enemy_pieces,
+                            ))
+                        }
+                        _ => continue,
+                    }
+                }
+            }
+        };
+
+        moves
+    }
+
+    pub fn enumerate_white_pawn_moves(
+        &self,
+        initial_square: u8,
+        friendly_pieces: u64,
+        enemy_pieces: u64,
+    ) -> MoveList {
+        let mut pawn_moves = MoveList::new();
+        let mut target_squares = 0;
+
+        target_squares |=
+            self.move_gen.get_white_pawn_moves(initial_square) & !(friendly_pieces | enemy_pieces);
+
+        let en_passant_square = BitBoards::unchecked_square_to_bitboard(
+            self.board_state.en_passant_square.unwrap_or(0),
+        );
+
+        target_squares |= self.move_gen.get_white_pawn_attacks(initial_square)
+            & (enemy_pieces | en_passant_square);
+
+        for target_square in 0..64 {
+            let target_square_bit = 1 << target_square;
+
+            if target_squares & target_square_bit == 0 {
+                continue;
+            };
+
+            let mut mv = Move::unchecked_from_squares(initial_square, target_square);
+
+            match target_square - initial_square {
+                16 if enemy_pieces & (target_square_bit >> 8) != 0 => continue,
+                16 => {
+                    mv.set_double_pawn_push();
+                    continue;
+                }
+                _ => (),
+            };
+
+            if target_square_bit & enemy_pieces != 0 {
+                mv.set_capture();
+            }
+
+            if target_square_bit & en_passant_square != 0 {
+                mv.set_en_passant_capture();
+
+                if self.would_check_white(mv) {
+                    continue;
+                };
+
+                pawn_moves.push(MoveScore::new(mv));
+                continue;
+            }
+
+            if target_square_bit & RANK_8 != 0 {
+                if self.would_check_white(mv) {
+                    continue;
+                }
+
+                let mut knight_promotion = mv.clone();
+                knight_promotion.add_knight_promotion();
+                pawn_moves.push(MoveScore::new(knight_promotion));
+
+                let mut rook_promotion = mv.clone();
+                rook_promotion.add_rook_promotion();
+                pawn_moves.push(MoveScore::new(rook_promotion));
+
+                let mut bishop_promotion = mv.clone();
+                bishop_promotion.add_bishop_promotion();
+                pawn_moves.push(MoveScore::new(bishop_promotion));
+
+                mv.add_queen_promotion();
+                pawn_moves.push(MoveScore::new(mv));
+
+                continue;
+            }
+
+            if self.would_check_white(mv) {
+                continue;
+            }
+
+            pawn_moves.push(MoveScore::new(mv));
+        }
+
+        pawn_moves
+    }
+
+    pub fn enumerate_black_pawn_moves(
+        &self,
+        initial_square: u8,
+        friendly_pieces: u64,
+        enemy_pieces: u64,
+    ) -> MoveList {
+        let mut pawn_moves = MoveList::new();
+        let mut target_squares = 0;
+
+        target_squares |=
+            self.move_gen.get_black_pawn_moves(initial_square) & !(friendly_pieces | enemy_pieces);
+
+        let en_passant_square = BitBoards::unchecked_square_to_bitboard(
+            self.board_state.en_passant_square.unwrap_or(0),
+        );
+
+        target_squares |= self.move_gen.get_black_pawn_attacks(initial_square)
+            & (enemy_pieces | en_passant_square);
+
+        for target_square in 0..64 {
+            let target_square_bit = 1 << target_square;
+
+            if target_squares & target_square_bit == 0 {
+                continue;
+            };
+
+            let mut mv = Move::unchecked_from_squares(initial_square, target_square);
+
+            match initial_square - target_square {
+                16 if enemy_pieces & (target_square_bit << 8) != 0 => continue,
+                16 => {
+                    mv.set_double_pawn_push();
+                    continue;
+                }
+                _ => (),
+            };
+
+            if target_square_bit & enemy_pieces != 0 {
+                mv.set_capture();
+            }
+
+            if target_square_bit & en_passant_square != 0 {
+                mv.set_en_passant_capture();
+
+                if self.would_check_black(mv) {
+                    continue;
+                };
+
+                pawn_moves.push(MoveScore::new(mv));
+                continue;
+            }
+
+            if target_square_bit & RANK_1 != 0 {
+                if self.would_check_black(mv) {
+                    continue;
+                }
+
+                let mut knight_promotion = mv.clone();
+                knight_promotion.add_knight_promotion();
+                pawn_moves.push(MoveScore::new(knight_promotion));
+
+                let mut rook_promotion = mv.clone();
+                rook_promotion.add_rook_promotion();
+                pawn_moves.push(MoveScore::new(rook_promotion));
+
+                let mut bishop_promotion = mv.clone();
+                bishop_promotion.add_bishop_promotion();
+                pawn_moves.push(MoveScore::new(bishop_promotion));
+
+                mv.add_queen_promotion();
+                pawn_moves.push(MoveScore::new(mv));
+
+                continue;
+            }
+
+            if self.would_check_black(mv) {
+                continue;
+            }
+
+            pawn_moves.push(MoveScore::new(mv));
+        }
+
+        pawn_moves
     }
 }
 
