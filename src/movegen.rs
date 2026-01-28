@@ -74,8 +74,8 @@ impl MoveGenerator {
         self.king_attacks[square as usize]
     }
 
-    /// Calculates all squares a rook is attacking from the given square.
-    /// Current implementation uses dumb7fill.
+    /// Calculates all squares a [rook](crate::Piece::Rook) is attacking from the given square.
+    /// Current implementation uses [dumb7fill](https://www.chessprogramming.org/Dumb7Fill).
     pub fn get_rook_attacks(square: u8, open_squares: u64) -> u64 {
         let rook = 1 << square;
         let mut attacks = 0;
@@ -127,8 +127,8 @@ impl MoveGenerator {
         attacks
     }
 
-    /// Calculates all squares a bishop is attacking from the given square.
-    /// Current implementation uses dumb7fill.
+    /// Calculates all squares a [bishop](crate::Piece::Bishop) is attacking from the given square.
+    /// Current implementation uses [dumb7fill](https://www.chessprogramming.org/Dumb7Fill).
     pub fn get_bishop_attacks(square: u8, open_squares: u64) -> u64 {
         let bishop = 1 << square;
         let mut attacks = 0;
@@ -180,8 +180,8 @@ impl MoveGenerator {
         attacks
     }
 
-    /// Calculates all squares a queen is attacking from the given square.
-    /// Current implementation uses dumb7fill.
+    /// Calculates all squares a [queen](crate::Piece::Queen) is attacking from the given square.
+    /// Current implementation uses [dumb7fill](https://www.chessprogramming.org/Dumb7Fill).
     pub fn get_queen_attacks(square: u8, open_squares: u64) -> u64 {
         MoveGenerator::get_bishop_attacks(square, open_squares)
             | MoveGenerator::get_rook_attacks(square, open_squares)
@@ -189,7 +189,7 @@ impl MoveGenerator {
 }
 
 /// Generates and returns a lookup table of every non-capture move a
-/// white pawn can make from each square on the board.
+/// [white](crate::Color::White) [pawn](crate::Piece::Pawn) can make from each square on the board.
 pub fn compute_white_pawn_moves() -> [u64; 64] {
     let mut moves = [0; 64];
 
@@ -207,7 +207,7 @@ pub fn compute_white_pawn_moves() -> [u64; 64] {
 }
 
 /// Generates and returns a lookup table of every non-capture move a
-/// black pawn can make from each square on the board.
+/// [black](crate::Color::Black) [pawn](crate::Piece::Pawn) can make from each square on the board.
 pub fn compute_black_pawn_moves() -> [u64; 64] {
     let mut moves = [0; 64];
 
@@ -224,7 +224,7 @@ pub fn compute_black_pawn_moves() -> [u64; 64] {
     moves
 }
 
-/// Generates and returns a lookup table of every square a white pawn
+/// Generates and returns a lookup table of every square a [white](crate::Color::White) [pawn](crate::Piece::Pawn)
 /// is attacking from each square on the board.
 pub fn compute_white_pawn_attacks() -> [u64; 64] {
     let mut attacks = [0; 64];
@@ -238,7 +238,7 @@ pub fn compute_white_pawn_attacks() -> [u64; 64] {
     attacks
 }
 
-/// Generates and returns a lookup table of every square a black pawn
+/// Generates and returns a lookup table of every square a [black](crate::Color::Black) [pawn](crate::Piece::Pawn)
 /// is attacking from each square on the board.
 pub fn compute_black_pawn_attacks() -> [u64; 64] {
     let mut attacks = [0; 64];
@@ -252,7 +252,7 @@ pub fn compute_black_pawn_attacks() -> [u64; 64] {
     attacks
 }
 
-/// Generates and returns a lookup table of every move a knight can make
+/// Generates and returns a lookup table of every move a [knight](crate::Piece::Knight) can make
 /// (and therefore every square it is attacking) from each square on the
 /// board.
 pub fn compute_knight_attacks() -> [u64; 64] {
@@ -274,7 +274,7 @@ pub fn compute_knight_attacks() -> [u64; 64] {
     attacks
 }
 
-/// Generates and returns a lookup table of every move a king can make
+/// Generates and returns a lookup table of every move a [king](crate::Piece::King) can make
 /// (and therefore every square it is attacking) from each square on the
 /// board.
 pub fn compute_king_attacks() -> [u64; 64] {
