@@ -4,7 +4,7 @@ use crate::moves::*;
 use crate::util::*;
 use crate::{Color, Piece};
 
-mod boardstate_constants {
+pub mod boardstate_constants {
     pub const CAN_CASTLE_KINGSIDE_WHITE: u8 = 0b0010;
     pub const CAN_CASTLE_KINGSIDE_BLACK: u8 = 0b1000;
     pub const CAN_CASTLE_QUEENSIDE_WHITE: u8 = 0b0001;
@@ -248,10 +248,10 @@ impl BoardState {
         ))
     }
 
-    /// Returns a FEN string of this board state.
+    /// Returns a FEN string of this [`BoardState`].
     /// # Panics
-    /// Currently calls `expect` on `index_to_square_str`. This should not fail,
-    /// as the board state representation should always be valid.
+    /// Currently calls [`expect()`](std::option::Option::expect) on [`index_to_square_str()`]. This should not fail,
+    /// as the [`BoardState`] representation should always be valid.
     pub fn to_fen(&self) -> String {
         let mut fen: Vec<String> = Vec::with_capacity(6);
 
@@ -303,7 +303,7 @@ impl BoardState {
         fen.join(" ")
     }
 
-    /// Returns the piece placement section of a FEN string of this board state.
+    /// Returns the piece placement section of a FEN string of this [`BoardState`].
     pub fn bitboard_to_fen(&self) -> String {
         let mut ranks = vec![String::with_capacity(8); 8];
 
@@ -348,37 +348,37 @@ impl BoardState {
         ranks.join("/")
     }
 
-    /// Returns an immutable reference to the bitboards of this board state.
+    /// Returns an immutable reference to the bitboards of this [`BoardState`].
     pub fn get_position(&self) -> &BitBoards {
         &self.position
     }
 
-    /// Returns a mutable reference to the bitboards of this board state.
+    /// Returns a mutable reference to the bitboards of this [`BoardState`].
     pub fn get_mut_position(&mut self) -> &mut BitBoards {
         &mut self.position
     }
 
-    /// Returns true if the white kingside castling bitflag is set, and false otherwise.
+    /// Returns `true` if the [`CAN_CASTLE_KINGSIDE_WHITE`] bitflag is set, and `false` otherwise.
     pub fn has_castling_rights_kingside_white(&self) -> bool {
         self.castling_rights & CAN_CASTLE_KINGSIDE_WHITE != 0
     }
 
-    /// Returns true if the black kingside castling bitflag is set, and false otherwise.
+    /// Returns `true` if the [`CAN_CASTLE_KINGSIDE_BLACK`] bitflag is set, and `false` otherwise.
     pub fn has_castling_rights_kingside_black(&self) -> bool {
         self.castling_rights & CAN_CASTLE_KINGSIDE_BLACK != 0
     }
 
-    /// Returns true if the white queenside castling bitflag is set, and false otherwise.
+    /// Returns `true` if the [`CAN_CASTLE_QUEENSIDE_WHITE`] bitflag is set, and `false` otherwise.
     pub fn has_castling_rights_queenside_white(&self) -> bool {
         self.castling_rights & CAN_CASTLE_QUEENSIDE_WHITE != 0
     }
 
-    /// Returns true if the black queenside castling bitflag is set, and false otherwise.
+    /// Returns `true` if the [`CAN_CASTLE_QUEENSIDE_BLACK`] bitflag is set, and `false` otherwise.
     pub fn has_castling_rights_queenside_black(&self) -> bool {
         self.castling_rights & CAN_CASTLE_QUEENSIDE_BLACK != 0
     }
 
-    /// The primary move-making function. Takes a `Move` and updates the boardstate
+    /// The primary move-making function. Takes a [`Move`] and updates the [`BoardState`]
     /// accordingly.
     pub fn make_move(&mut self, mv: Move) {
         let (moved_color, moved_piece) = self
