@@ -274,8 +274,8 @@ impl MoveScore {
     }
 }
 
-/// A custom implementation of an `ArrayVec`, storing a collection
-/// of [`MoveScore`].
+/// A custom implementation of an [`ArrayVec`](https://docs.rs/arrayvec/latest/arrayvec/struct.ArrayVec.html),
+/// storing a collection of [`MoveScore`].
 pub struct MoveList {
     list: [MoveScore; MAX_POSSIBLE_MOVES],
     len: usize,
@@ -362,6 +362,13 @@ impl MoveList {
     /// Calls [`get_best()`](Self::get_best()), which panics.
     pub fn get_best_move(&mut self) -> Move {
         self.get_best().mv
+    }
+
+    /// Takes ownership of another [`MoveList`], appending its elements to itself.
+    pub fn append(&mut self, appended_list: MoveList) {
+        for i in 0..appended_list.len {
+            self.push(appended_list.list[i]);
+        }
     }
 }
 
