@@ -34,6 +34,10 @@ use move_constants::*;
 pub struct Move(u16);
 
 impl Move {
+    pub fn new() -> Self {
+        Self(0)
+    }
+
     /// Returns an optional [`Move`] instance from square indices.
     pub fn from_squares(initial_square: u8, target_square: u8) -> Option<Self> {
         let initial_square = checked_square_u8_to_square_u16(initial_square)?;
@@ -129,6 +133,12 @@ impl Move {
         self.0 |= CAPTURE;
     }
 
+    /// Sets the [`CAPTURE`] bit of the [`Move`] bitflag without altering
+    /// the other bits.
+    pub fn add_capture(&mut self) {
+        self.0 |= CAPTURE;
+    }
+
     /// Returns `true` if the [`EN_PASSANT_CAPTURE`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_en_passant_capture(&self) -> bool {
@@ -159,6 +169,12 @@ impl Move {
         self.0 |= KNIGHT_PROMOTION;
     }
 
+    /// Sets the [`KNIGHT_PROMOTION`] bits of the [`Move`] bitflag without
+    /// altering the other bits.
+    pub fn add_knight_promotion(&mut self) {
+        self.0 |= KNIGHT_PROMOTION;
+    }
+
     /// Returns `true` if the [`BISHOP_PROMOTION`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_bishop_promotion(&self) -> bool {
@@ -168,6 +184,12 @@ impl Move {
     /// Sets the bitflag of the [`Move`] to [`BISHOP_PROMOTION`].
     pub fn set_bishop_promotion(&mut self) {
         self.0 &= QUIET_MASK;
+        self.0 |= BISHOP_PROMOTION;
+    }
+
+    /// Sets the [`BISHOP_PROMOTION`] bits of the [`Move`] bitflag without
+    /// altering the other bits.
+    pub fn add_bishop_promotion(&mut self) {
         self.0 |= BISHOP_PROMOTION;
     }
 
@@ -183,6 +205,12 @@ impl Move {
         self.0 |= ROOK_PROMOTION;
     }
 
+    /// Sets the [`ROOK_PROMOTION`] bits of the [`Move`] bitflag without
+    /// altering the other bits.
+    pub fn add_rook_promotion(&mut self) {
+        self.0 |= ROOK_PROMOTION;
+    }
+
     /// Returns `true` if the [`QUEEN_PROMOTION`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_queen_promotion(&self) -> bool {
@@ -192,6 +220,12 @@ impl Move {
     /// Sets the bitflag of the [`Move`] to [`QUEEN_PROMOTION`].
     pub fn set_queen_promotion(&mut self) {
         self.0 &= QUIET_MASK;
+        self.0 |= QUEEN_PROMOTION;
+    }
+
+    /// Sets the [`QUEEN_PROMOTION`] bits of the [`Move`] bitflag without
+    /// altering the other bits.
+    pub fn add_queen_promotion(&mut self) {
         self.0 |= QUEEN_PROMOTION;
     }
 
@@ -260,17 +294,11 @@ impl MoveScore {
     }
 
     pub fn new(mv: Move) -> Self {
-        Self {
-            mv,
-            score: 0,
-        }
+        Self { mv, score: 0 }
     }
 
     pub fn with_score(mv: Move, score: i32) -> Self {
-        Self {
-            mv,
-            score,
-        }
+        Self { mv, score }
     }
 }
 
@@ -345,7 +373,7 @@ impl MoveList {
 
     /// Calls [`sort()`](Self::sort()) on the [`MoveList`] and returns the [`MoveScore`]
     /// entry with the highest score.
-    /// 
+    ///
     /// # Panics
     /// Currently directly indexes the underlying array. The index will
     /// be out of bounds if the current length is `0`.
@@ -357,7 +385,7 @@ impl MoveList {
 
     /// Calls [`sort()`](Self::sort()) on the [`MoveList`] and returns the [`Move`] of the
     /// [`MoveScore`] entry with the highest score.
-    /// 
+    ///
     /// # Panics
     /// Calls [`get_best()`](Self::get_best()), which panics.
     pub fn get_best_move(&mut self) -> Move {
@@ -369,6 +397,31 @@ impl MoveList {
         for i in 0..appended_list.len {
             self.push(appended_list.list[i]);
         }
+    }
+}
+
+pub struct MoveListIterator<'a> {
+    move_list: &'a MoveList,
+    position: usize,
+}
+
+impl<'a> MoveListIterator<'a> {
+    pub fn new(move_list: &'a MoveList) -> Self {
+        Self {
+            move_list,
+            position: 0,
+        }
+    }
+}
+
+impl Iterator for MoveListIterator<'_> {
+    type Item = MoveScore;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let item = self.move_list.get(self.position);
+        self.position += 1;
+
+        item
     }
 }
 
