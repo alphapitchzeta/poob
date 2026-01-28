@@ -92,7 +92,7 @@ use crate::moves::Move;
 use crate::{Color, Piece};
 use bitboard_constants::{bitboard_indices::*, castle_squares::*, masks::*, starting_positions::*};
 
-// Error variants when constructing a new bitboard
+/// Error variants when constructing a new bitboard
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BitBoardCreationError {
     PieceOverlap,
@@ -172,102 +172,102 @@ impl BitBoards {
             .fold(0, |acc, &board| acc | board)
     }
 
-    /// Returns the bitboard representing the position of the black and white pawns.
+    /// Returns the bitboard representing the position of the [black](Color::Black) and [white](Color::White) [pawns](Piece::Pawn).
     pub fn pawns(&self) -> u64 {
         self.boards[WHITE][PAWN] | self.boards[BLACK][PAWN]
     }
 
-    /// Returns the bitboard representing the position of the white pawns.
+    /// Returns the bitboard representing the position of the [white](Color::White) [pawns](Piece::Pawn).
     pub fn pawns_white(&self) -> u64 {
         self.boards[WHITE][PAWN]
     }
 
-    /// Returns the bitboard representing the position of the black pawns.
+    /// Returns the bitboard representing the position of the [black](Color::Black) [pawns](Piece::Pawn).
     pub fn pawns_black(&self) -> u64 {
         self.boards[BLACK][PAWN]
     }
 
-    /// Returns the bitboard representing the position of the black and white rooks.
+    /// Returns the bitboard representing the position of the [black](Color::Black) and [white](Color::White) [rooks](Piece::Rook).
     pub fn rooks(&self) -> u64 {
         self.boards[WHITE][ROOK] | self.boards[BLACK][ROOK]
     }
 
-    /// Returns the bitboard representing the position of the white rooks.
+    /// Returns the bitboard representing the position of the [white](Color::White) [rooks](Piece::Rook).
     pub fn rooks_white(&self) -> u64 {
         self.boards[WHITE][ROOK]
     }
 
-    /// Returns the bitboard representing the position of the black rooks.
+    /// Returns the bitboard representing the position of the [black](Color::Black) [rooks](Piece::Rook).
     pub fn rooks_black(&self) -> u64 {
         self.boards[BLACK][ROOK]
     }
 
-    /// Returns the bitboard representing the position of the black and white knights.
+    /// Returns the bitboard representing the position of the [black](Color::Black) and [white](Color::White) [knights](Piece::Knight).
     pub fn knights(&self) -> u64 {
         self.boards[WHITE][KNIGHT] | self.boards[BLACK][KNIGHT]
     }
 
-    /// Returns the bitboard representing the position of the white knights.
+    /// Returns the bitboard representing the position of the [white](Color::White) [knights](Piece::Knight).
     pub fn knights_white(&self) -> u64 {
         self.boards[WHITE][KNIGHT]
     }
 
-    /// Returns the bitboard representing the position of the black knights.
+    /// Returns the bitboard representing the position of the [black](Color::Black) [knights](Piece::Knight).
     pub fn knights_black(&self) -> u64 {
         self.boards[BLACK][KNIGHT]
     }
 
-    /// Returns the bitboard representing the position of the black and white bishops.
+    /// Returns the bitboard representing the position of the [black](Color::Black) and [white](Color::White) [bishops](Piece::Bishop).
     pub fn bishops(&self) -> u64 {
         self.boards[WHITE][BISHOP] | self.boards[BLACK][BISHOP]
     }
 
-    /// Returns the bitboard representing the position of the white bishops.
+    /// Returns the bitboard representing the position of the [white](Color::White) [bishops](Piece::Bishop).
     pub fn bishops_white(&self) -> u64 {
         self.boards[WHITE][BISHOP]
     }
 
-    /// Returns the bitboard representing the position of the black bishops.
+    /// Returns the bitboard representing the position of the [black](Color::Black) [bishops](Piece::Bishop).
     pub fn bishops_black(&self) -> u64 {
         self.boards[BLACK][BISHOP]
     }
 
-    /// Returns the bitboard representing the position of the black and white queens.
+    /// Returns the bitboard representing the position of the [black](Color::Black) and [white](Color::White) [queens](Piece::Queen).
     pub fn queens(&self) -> u64 {
         self.boards[WHITE][QUEEN] | self.boards[BLACK][QUEEN]
     }
 
-    /// Returns the bitboard representing the position of the white queens.
+    /// Returns the bitboard representing the position of the [white](Color::White) [queens](Piece::Queen).
     pub fn queens_white(&self) -> u64 {
         self.boards[WHITE][QUEEN]
     }
 
-    /// Returns the bitboard representing the position of the black queens.
+    /// Returns the bitboard representing the position of the [black](Color::Black) [queens](Piece::Queen).
     pub fn queens_black(&self) -> u64 {
         self.boards[BLACK][QUEEN]
     }
 
-    /// Returns the bitboard representing the position of the black and white kings.
+    /// Returns the bitboard representing the position of the [black](Color::Black) and [white](Color::White) kings.
     pub fn kings(&self) -> u64 {
         self.boards[WHITE][KING] | self.boards[BLACK][KING]
     }
 
-    /// Returns the bitboard representing the position of the white king.
+    /// Returns the bitboard representing the position of the [white](Color::White) king.
     pub fn king_white(&self) -> u64 {
         self.boards[WHITE][KING]
     }
 
-    /// Returns the bitboard representing the position of the black king.
+    /// Returns the bitboard representing the position of the [black](Color::Black) king.
     pub fn king_black(&self) -> u64 {
         self.boards[BLACK][KING]
     }
 
-    /// Returns the bitboard representing the position of the white pieces.
+    /// Returns the bitboard representing the position of the [white](Color::White) pieces.
     pub fn white(&self) -> u64 {
         self.boards[WHITE].iter().fold(0, |acc, e| acc | *e)
     }
 
-    /// Returns the bitboard representing the position of the black pieces.
+    /// Returns the bitboard representing the position of the [black](Color::Black) pieces.
     pub fn black(&self) -> u64 {
         self.boards[BLACK].iter().fold(0, |acc, e| acc | *e)
     }
@@ -278,7 +278,7 @@ impl BitBoards {
     }
 
     /// "Clears" the square from all bitboards, setting the bit at that
-    /// position to 0.
+    /// position to `0`.
     pub fn clear_square(&mut self, square: u8) {
         let clear_mask = !(1 << square);
 
@@ -311,7 +311,7 @@ impl BitBoards {
         bitboard.trailing_zeros() as u8
     }
 
-    /// Returns `Some((Color, Piece))` of the piece on a given square, or `None`
+    /// Returns `Some((Color, Piece))` of the piece on a given square, or [`None`]
     /// if that square is unoccupied.
     pub fn piece_at(&self, square: u8) -> Option<(Color, Piece)> {
         let Ok(bitboard) = BitBoards::square_to_bitboard(square) else {
@@ -392,7 +392,7 @@ impl BitBoards {
             initial_bitboard | target_bitboard;
     }
 
-    /// Sets the white king and white kingside rook to their castle target squares.
+    /// Sets the [white](Color::White) [king](Piece::King) and [white](Color::White) kingside [rook](Piece::Rook) to their castle target squares.
     /// Currently this is completely unchecked, and may result in overlapping
     /// bitboards.
     pub fn castle_kingside_white(&mut self) {
@@ -402,7 +402,7 @@ impl BitBoards {
         self.boards[WHITE][ROOK] |= KINGSIDE_WHITE_ROOK_TARGET_SQUARE;
     }
 
-    /// Sets the black king and black kingside rook to their castle target squares.
+    /// Sets the [black](Color::Black) [king](Piece::King) and [black](Color::Black) kingside [rook](Piece::Rook) to their castle target squares.
     /// Currently this is completely unchecked, and may result in overlapping
     /// bitboards.
     pub fn castle_kingside_black(&mut self) {
@@ -412,7 +412,7 @@ impl BitBoards {
         self.boards[BLACK][ROOK] |= KINGSIDE_BLACK_ROOK_TARGET_SQUARE;
     }
 
-    /// Sets the white king and white queenside rook to their castle target squares.
+    /// Sets the [white](Color::White) [king](Piece::King) and [white](Color::White) queenside [rook](Piece::Rook) to their castle target squares.
     /// Currently this is completely unchecked, and may result in overlapping
     /// bitboards.
     pub fn castle_queenside_white(&mut self) {
@@ -422,7 +422,7 @@ impl BitBoards {
         self.boards[WHITE][ROOK] |= QUEENSIDE_WHITE_ROOK_TARGET_SQUARE;
     }
 
-    /// Sets the black king and black queenside rook to their castle target squares.
+    /// Sets the [black](Color::Black) [king](Piece::King) and [black](Color::Black) queenside [rook](Piece::Rook) to their castle target squares.
     /// Currently this is completely unchecked, and may result in overlapping
     /// bitboards.
     pub fn castle_queenside_black(&mut self) {
@@ -432,8 +432,8 @@ impl BitBoards {
         self.boards[BLACK][ROOK] |= QUEENSIDE_BLACK_ROOK_TARGET_SQUARE;
     }
 
-    /// "Moves" the white pawn in the initial square to the target square, "capturing"
-    /// any black pawn behind it.
+    /// "Moves" the [white](Color::White) [pawn](Piece::Pawn) in the initial square to the target square, "capturing"
+    /// any [black](Color::Black) [pawn](Piece::Pawn) behind it.
     pub fn en_passant_white(&mut self, mv: Move) {
         let (initial_square, target_square) = (mv.get_initial_square(), mv.get_target_square());
 
@@ -447,8 +447,8 @@ impl BitBoards {
 
     // TODO: ^v TEST BOTH OF THESE
 
-    /// "Moves" the black pawn in the initial square to the target square, "capturing"
-    /// any white pawn behind it.
+    /// "Moves" the [black](Color::Black) [pawn](Piece::Pawn) in the initial square to the target square, "capturing"
+    /// any [white](Color::White) [pawn](Piece::Pawn) behind it.
     pub fn en_passant_black(&mut self, mv: Move) {
         let (initial_square, target_square) = (mv.get_initial_square(), mv.get_target_square());
 
@@ -460,7 +460,7 @@ impl BitBoards {
         self.boards[BLACK][PAWN] ^= initial_bitboard | target_bitboard;
     }
 
-    /// Performs a promotion move for white. Removes the pawn from the initial square
+    /// Performs a promotion move for [white](Color::White). Removes the [pawn](Piece::Pawn) from the initial square
     /// and places the piece specified in the move in the target square.
     pub fn promote_white(&mut self, mv: Move) {
         let promote_to = if mv.is_queen_promotion() {
@@ -485,7 +485,7 @@ impl BitBoards {
 
     // TODO: ^v TEST BOTH OF THESE
 
-    /// Performs a promotion move for black. Removes the pawn from the initial square
+    /// Performs a promotion move for [black](Color::Black). Removes the [pawn](Piece::Pawn) from the initial square
     /// and places the piece specified in the move in the target square.
     pub fn promote_black(&mut self, mv: Move) {
         let promote_to = if mv.is_queen_promotion() {
