@@ -5,6 +5,7 @@ pub mod movegen;
 pub mod moves;
 pub mod rende;
 pub mod util;
+pub mod perft;
 
 use crate::bitboards::bitboard_constants::bitboard_indices::*;
 
