@@ -256,12 +256,37 @@ impl Game<'_> {
                                 enemy_pieces,
                                 &mut moves,
                             );
-                        },
-                        Some((Color::White, Piece::Knight)) => self.enumerate_white_knight_moves(initial_square, friendly_pieces, enemy_pieces, &mut moves),
-                        Some((Color::White, Piece::King)) => self.enumerate_white_king_moves(initial_square, friendly_pieces, enemy_pieces, &mut moves),
-                        Some((Color::White, Piece::Rook)) => self.enumerate_white_rook_moves(initial_square, friendly_pieces, enemy_pieces, &mut moves),
-                        Some((Color::White, Piece::Bishop)) => self.enumerate_white_bishop_moves(initial_square, friendly_pieces, enemy_pieces, &mut moves),
-                        Some((Color::White, Piece::Queen)) => self.enumerate_white_queen_moves(initial_square, friendly_pieces, enemy_pieces, &mut moves),
+                        }
+                        Some((Color::White, Piece::Knight)) => self.enumerate_white_knight_moves(
+                            initial_square,
+                            friendly_pieces,
+                            enemy_pieces,
+                            &mut moves,
+                        ),
+                        Some((Color::White, Piece::King)) => self.enumerate_white_king_moves(
+                            initial_square,
+                            friendly_pieces,
+                            enemy_pieces,
+                            &mut moves,
+                        ),
+                        Some((Color::White, Piece::Rook)) => self.enumerate_white_rook_moves(
+                            initial_square,
+                            friendly_pieces,
+                            enemy_pieces,
+                            &mut moves,
+                        ),
+                        Some((Color::White, Piece::Bishop)) => self.enumerate_white_bishop_moves(
+                            initial_square,
+                            friendly_pieces,
+                            enemy_pieces,
+                            &mut moves,
+                        ),
+                        Some((Color::White, Piece::Queen)) => self.enumerate_white_queen_moves(
+                            initial_square,
+                            friendly_pieces,
+                            enemy_pieces,
+                            &mut moves,
+                        ),
                         _ => continue,
                     };
                 }
@@ -279,12 +304,37 @@ impl Game<'_> {
                                 enemy_pieces,
                                 &mut moves,
                             );
-                        },
-                        Some((Color::Black, Piece::Knight)) => self.enumerate_black_knight_moves(initial_square, friendly_pieces, enemy_pieces, &mut moves),
-                        Some((Color::Black, Piece::King)) => self.enumerate_black_king_moves(initial_square, friendly_pieces, enemy_pieces, &mut moves),
-                        Some((Color::Black, Piece::Rook)) => self.enumerate_black_rook_moves(initial_square, friendly_pieces, enemy_pieces, &mut moves),
-                        Some((Color::Black, Piece::Bishop)) => self.enumerate_black_bishop_moves(initial_square, friendly_pieces, enemy_pieces, &mut moves),
-                        Some((Color::Black, Piece::Queen)) => self.enumerate_black_queen_moves(initial_square, friendly_pieces, enemy_pieces, &mut moves),
+                        }
+                        Some((Color::Black, Piece::Knight)) => self.enumerate_black_knight_moves(
+                            initial_square,
+                            friendly_pieces,
+                            enemy_pieces,
+                            &mut moves,
+                        ),
+                        Some((Color::Black, Piece::King)) => self.enumerate_black_king_moves(
+                            initial_square,
+                            friendly_pieces,
+                            enemy_pieces,
+                            &mut moves,
+                        ),
+                        Some((Color::Black, Piece::Rook)) => self.enumerate_black_rook_moves(
+                            initial_square,
+                            friendly_pieces,
+                            enemy_pieces,
+                            &mut moves,
+                        ),
+                        Some((Color::Black, Piece::Bishop)) => self.enumerate_black_bishop_moves(
+                            initial_square,
+                            friendly_pieces,
+                            enemy_pieces,
+                            &mut moves,
+                        ),
+                        Some((Color::Black, Piece::Queen)) => self.enumerate_black_queen_moves(
+                            initial_square,
+                            friendly_pieces,
+                            enemy_pieces,
+                            &mut moves,
+                        ),
                         _ => continue,
                     }
                 }
@@ -450,7 +500,13 @@ impl Game<'_> {
         }
     }
 
-    pub fn enumerate_white_knight_moves(&self, initial_square: u8, friendly_pieces: u64, enemy_pieces: u64, moves: &mut MoveList) {
+    pub fn enumerate_white_knight_moves(
+        &self,
+        initial_square: u8,
+        friendly_pieces: u64,
+        enemy_pieces: u64,
+        moves: &mut MoveList,
+    ) {
         let target_squares = self.move_gen.get_knight_attacks(initial_square) & !friendly_pieces;
 
         for target_square in 0..64 {
@@ -474,7 +530,13 @@ impl Game<'_> {
         }
     }
 
-    pub fn enumerate_black_knight_moves(&self, initial_square: u8, friendly_pieces: u64, enemy_pieces: u64, moves: &mut MoveList) {
+    pub fn enumerate_black_knight_moves(
+        &self,
+        initial_square: u8,
+        friendly_pieces: u64,
+        enemy_pieces: u64,
+        moves: &mut MoveList,
+    ) {
         let target_squares = self.move_gen.get_knight_attacks(initial_square) & !friendly_pieces;
 
         for target_square in 0..64 {
@@ -498,7 +560,13 @@ impl Game<'_> {
         }
     }
 
-    pub fn enumerate_white_king_moves(&self, initial_square: u8, friendly_pieces: u64, enemy_pieces: u64, moves: &mut MoveList) {
+    pub fn enumerate_white_king_moves(
+        &self,
+        initial_square: u8,
+        friendly_pieces: u64,
+        enemy_pieces: u64,
+        moves: &mut MoveList,
+    ) {
         let target_squares = self.move_gen.get_king_attacks(initial_square) & !friendly_pieces;
 
         for target_square in 0..64 {
@@ -536,7 +604,13 @@ impl Game<'_> {
         }
     }
 
-    pub fn enumerate_black_king_moves(&self, initial_square: u8, friendly_pieces: u64, enemy_pieces: u64, moves: &mut MoveList) {
+    pub fn enumerate_black_king_moves(
+        &self,
+        initial_square: u8,
+        friendly_pieces: u64,
+        enemy_pieces: u64,
+        moves: &mut MoveList,
+    ) {
         let target_squares = self.move_gen.get_king_attacks(initial_square) & !friendly_pieces;
 
         for target_square in 0..64 {
@@ -574,8 +648,16 @@ impl Game<'_> {
         }
     }
 
-    pub fn enumerate_white_rook_moves(&self, initial_square: u8, friendly_pieces: u64, enemy_pieces: u64, moves: &mut MoveList) {
-        let target_squares = MoveGenerator::get_rook_attacks(initial_square, !(friendly_pieces | enemy_pieces)) & !friendly_pieces;
+    pub fn enumerate_white_rook_moves(
+        &self,
+        initial_square: u8,
+        friendly_pieces: u64,
+        enemy_pieces: u64,
+        moves: &mut MoveList,
+    ) {
+        let target_squares =
+            MoveGenerator::get_rook_attacks(initial_square, !(friendly_pieces | enemy_pieces))
+                & !friendly_pieces;
 
         for target_square in 0..64 {
             let target_square_bit = 1 << target_square;
@@ -598,8 +680,16 @@ impl Game<'_> {
         }
     }
 
-    pub fn enumerate_black_rook_moves(&self, initial_square: u8, friendly_pieces: u64, enemy_pieces: u64, moves: &mut MoveList) {
-        let target_squares = MoveGenerator::get_rook_attacks(initial_square, !(friendly_pieces | enemy_pieces)) & !friendly_pieces;
+    pub fn enumerate_black_rook_moves(
+        &self,
+        initial_square: u8,
+        friendly_pieces: u64,
+        enemy_pieces: u64,
+        moves: &mut MoveList,
+    ) {
+        let target_squares =
+            MoveGenerator::get_rook_attacks(initial_square, !(friendly_pieces | enemy_pieces))
+                & !friendly_pieces;
 
         for target_square in 0..64 {
             let target_square_bit = 1 << target_square;
@@ -622,8 +712,16 @@ impl Game<'_> {
         }
     }
 
-    pub fn enumerate_white_bishop_moves(&self, initial_square: u8, friendly_pieces: u64, enemy_pieces: u64, moves: &mut MoveList) {
-        let target_squares = MoveGenerator::get_bishop_attacks(initial_square, !(friendly_pieces | enemy_pieces)) & !friendly_pieces;
+    pub fn enumerate_white_bishop_moves(
+        &self,
+        initial_square: u8,
+        friendly_pieces: u64,
+        enemy_pieces: u64,
+        moves: &mut MoveList,
+    ) {
+        let target_squares =
+            MoveGenerator::get_bishop_attacks(initial_square, !(friendly_pieces | enemy_pieces))
+                & !friendly_pieces;
 
         for target_square in 0..64 {
             let target_square_bit = 1 << target_square;
@@ -646,8 +744,16 @@ impl Game<'_> {
         }
     }
 
-    pub fn enumerate_black_bishop_moves(&self, initial_square: u8, friendly_pieces: u64, enemy_pieces: u64, moves: &mut MoveList) {
-        let target_squares = MoveGenerator::get_bishop_attacks(initial_square, !(friendly_pieces | enemy_pieces)) & !friendly_pieces;
+    pub fn enumerate_black_bishop_moves(
+        &self,
+        initial_square: u8,
+        friendly_pieces: u64,
+        enemy_pieces: u64,
+        moves: &mut MoveList,
+    ) {
+        let target_squares =
+            MoveGenerator::get_bishop_attacks(initial_square, !(friendly_pieces | enemy_pieces))
+                & !friendly_pieces;
 
         for target_square in 0..64 {
             let target_square_bit = 1 << target_square;
@@ -670,17 +776,29 @@ impl Game<'_> {
         }
     }
 
-    pub fn enumerate_white_queen_moves(&self, initial_square: u8, friendly_pieces: u64, enemy_pieces: u64, moves: &mut MoveList) {
+    pub fn enumerate_white_queen_moves(
+        &self,
+        initial_square: u8,
+        friendly_pieces: u64,
+        enemy_pieces: u64,
+        moves: &mut MoveList,
+    ) {
         self.enumerate_white_rook_moves(initial_square, friendly_pieces, enemy_pieces, moves);
         self.enumerate_white_bishop_moves(initial_square, friendly_pieces, enemy_pieces, moves);
     }
 
-    pub fn enumerate_black_queen_moves(&self, initial_square: u8, friendly_pieces: u64, enemy_pieces: u64, moves: &mut MoveList) {
+    pub fn enumerate_black_queen_moves(
+        &self,
+        initial_square: u8,
+        friendly_pieces: u64,
+        enemy_pieces: u64,
+        moves: &mut MoveList,
+    ) {
         self.enumerate_black_rook_moves(initial_square, friendly_pieces, enemy_pieces, moves);
         self.enumerate_black_bishop_moves(initial_square, friendly_pieces, enemy_pieces, moves);
     }
 
-    pub fn unchcked_make_move(&mut self, mv: Move) {
+    pub fn unchecked_make_move(&mut self, mv: Move) {
         self.board_state.make_move(mv);
     }
 }
