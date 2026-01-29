@@ -90,6 +90,10 @@ impl<'a> Game<'a> {
 }
 
 impl Game<'_> {
+    pub fn to_fen(&self) -> String {
+        self.board_state.to_fen()
+    }
+
     /// Returns a [`u64`] bitboard of all squares being attacked by pieces of a given [color](crate::Color).
     /// This includes squares currently occupied by other friendly pieces.
     pub fn get_attacks(&self, checked_color: Color) -> u64 {
@@ -674,6 +678,10 @@ impl Game<'_> {
     pub fn enumerate_black_queen_moves(&self, initial_square: u8, friendly_pieces: u64, enemy_pieces: u64, moves: &mut MoveList) {
         self.enumerate_black_rook_moves(initial_square, friendly_pieces, enemy_pieces, moves);
         self.enumerate_black_bishop_moves(initial_square, friendly_pieces, enemy_pieces, moves);
+    }
+
+    pub fn unchcked_make_move(&mut self, mv: Move) {
+        self.board_state.make_move(mv);
     }
 }
 
