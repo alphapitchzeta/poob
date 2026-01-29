@@ -365,6 +365,7 @@ impl BoardState {
         self.castling_rights & CAN_CASTLE_KINGSIDE_WHITE != 0
     }
 
+    /// Removes the [`CAN_CASTLE_KINGSIDE_WHITE`] bitflag from the [`BoardState`].
     pub fn remove_castling_rights_kingside_white(&mut self) {
         self.castling_rights &= !CAN_CASTLE_KINGSIDE_WHITE;
     }
@@ -374,6 +375,7 @@ impl BoardState {
         self.castling_rights & CAN_CASTLE_KINGSIDE_BLACK != 0
     }
 
+    /// Removes the [`CAN_CASTLE_KINGSIDE_BLACK`] bitflag from the [`BoardState`].
     pub fn remove_castling_rights_kingside_black(&mut self) {
         self.castling_rights &= !CAN_CASTLE_KINGSIDE_BLACK;
     }
@@ -383,6 +385,7 @@ impl BoardState {
         self.castling_rights & CAN_CASTLE_QUEENSIDE_WHITE != 0
     }
 
+    /// Removes the [`CAN_CASTLE_QUEENSIDE_WHITE`] bitflag from the [`BoardState`].
     pub fn remove_castling_rights_queenside_white(&mut self) {
         self.castling_rights &= !CAN_CASTLE_QUEENSIDE_WHITE;
     }
@@ -392,6 +395,7 @@ impl BoardState {
         self.castling_rights & CAN_CASTLE_QUEENSIDE_BLACK != 0
     }
 
+    /// Removes the [`CAN_CASTLE_QUEENSIDE_BLACK`] bitflag from the [`BoardState`].
     pub fn remove_castling_rights_queenside_black(&mut self) {
         self.castling_rights &= !CAN_CASTLE_QUEENSIDE_BLACK;
     }
