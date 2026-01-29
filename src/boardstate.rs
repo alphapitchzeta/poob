@@ -1,4 +1,6 @@
 use crate::bitboards::bitboard_constants::bitboard_indices::*;
+use crate::bitboards::bitboard_constants::rank_file::{FILE_A, FILE_H};
+use crate::bitboards::bitboard_constants::starting_positions::*;
 use crate::bitboards::{BitBoardCreationError, BitBoards};
 use crate::moves::*;
 use crate::util::*;
@@ -363,9 +365,17 @@ impl BoardState {
         self.castling_rights & CAN_CASTLE_KINGSIDE_WHITE != 0
     }
 
+    pub fn remove_castling_rights_kingside_white(&mut self) {
+        self.castling_rights &= !CAN_CASTLE_KINGSIDE_WHITE;
+    }
+
     /// Returns `true` if the [`CAN_CASTLE_KINGSIDE_BLACK`] bitflag is set, and `false` otherwise.
     pub fn has_castling_rights_kingside_black(&self) -> bool {
         self.castling_rights & CAN_CASTLE_KINGSIDE_BLACK != 0
+    }
+
+    pub fn remove_castling_rights_kingside_black(&mut self) {
+        self.castling_rights &= !CAN_CASTLE_KINGSIDE_BLACK;
     }
 
     /// Returns `true` if the [`CAN_CASTLE_QUEENSIDE_WHITE`] bitflag is set, and `false` otherwise.
@@ -373,9 +383,17 @@ impl BoardState {
         self.castling_rights & CAN_CASTLE_QUEENSIDE_WHITE != 0
     }
 
+    pub fn remove_castling_rights_queenside_white(&mut self) {
+        self.castling_rights &= !CAN_CASTLE_QUEENSIDE_WHITE;
+    }
+
     /// Returns `true` if the [`CAN_CASTLE_QUEENSIDE_BLACK`] bitflag is set, and `false` otherwise.
     pub fn has_castling_rights_queenside_black(&self) -> bool {
         self.castling_rights & CAN_CASTLE_QUEENSIDE_BLACK != 0
+    }
+
+    pub fn remove_castling_rights_queenside_black(&mut self) {
+        self.castling_rights &= !CAN_CASTLE_QUEENSIDE_BLACK;
     }
 
     /// The primary move-making function. Takes a [`Move`] and updates the [`BoardState`]
@@ -384,10 +402,10 @@ impl BoardState {
         let (moved_color, moved_piece) = self
             .position
             .piece_at(mv.get_initial_square())
-            .unwrap_or((self.side_to_move, Piece::Pawn));
+            .unwrap_or((self.side_to_move, Piece::King));
 
         self.en_passant_square = None;
-        
+
         match moved_color {
             Color::White => {
                 if mv.is_kingside_castle() {
@@ -401,7 +419,12 @@ impl BoardState {
                 } else if mv.is_double_pawn_push() {
                     self.en_passant_square = Some(mv.get_initial_square() + 8);
                 } else {
-                    self.make_move(mv);
+                    self.position.move_piece(mv);
+                }
+
+                if self.position.king_white() != DEFAULT_KING_WHITE {
+                    self.remove_castling_rights_kingside_white();
+                    self.remove_castling_rights_queenside_white();
                 }
             }
             Color::Black => {
@@ -416,7 +439,12 @@ impl BoardState {
                 } else if mv.is_double_pawn_push() {
                     self.en_passant_square = Some(mv.get_initial_square() - 8);
                 } else {
-                    self.make_move(mv);
+                    self.position.move_piece(mv);
+                }
+
+                if self.position.king_black() != DEFAULT_KING_BLACK {
+                    self.remove_castling_rights_kingside_black();
+                    self.remove_castling_rights_queenside_black();
                 }
             }
         };
@@ -427,7 +455,24 @@ impl BoardState {
             self.fifty_move_rule += 1;
         }
 
+        if self.position.rooks_white() & (DEFAULT_ROOKS_WHITE & FILE_A) == 0 {
+            self.remove_castling_rights_queenside_white();
+        }
+
+        if self.position.rooks_black() & (DEFAULT_BISHOPS_BLACK & FILE_A) == 0 {
+            self.remove_castling_rights_queenside_black();
+        }
+
+        if self.position.rooks_white() & (DEFAULT_ROOKS_WHITE & FILE_H) == 0 {
+            self.remove_castling_rights_kingside_white();
+        }
+
+        if self.position.rooks_black() & (DEFAULT_ROOKS_BLACK & FILE_H) == 0 {
+            self.remove_castling_rights_kingside_black();
+        }
+
         self.turn_count += 1;
+        self.side_to_move = self.side_to_move.enemy();
     }
 }
 
