@@ -400,6 +400,7 @@ impl MoveList {
     }
 }
 
+/// A struct to implement [`Iterator`] for [`MoveList`].
 pub struct MoveListIterator<'a> {
     move_list: &'a MoveList,
     position: usize,
