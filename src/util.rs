@@ -54,7 +54,7 @@ pub fn checked_square_u8_to_square_u16(square_u8: u8) -> Option<u16> {
     Some(square_u8 as u16)
 }
 
-/// Helper function to read a [`Move`] from [`stdin`](std::io::stdin). Loops until a valid
+/// Helper function to read a [`Move`] from [`stdin()`](std::io::stdin). Loops until a valid
 /// move is inputted.
 ///
 /// # Panics
@@ -81,6 +81,39 @@ pub fn read_move() -> Option<Move> {
     let t_square_str = squares.next()?;
 
     Move::from_squares_str(i_square_str, t_square_str)
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct SquareList {
+    squares: [u8; 64],
+    len: usize,
+}
+
+impl SquareList {
+    pub fn new() -> Self {
+        SquareList {
+            squares: [0; 64],
+            len: 0,
+        }
+    }
+
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    pub fn get(&self, index: usize) -> Option<u8> {
+        if index >= self.len {
+            return None;
+        }
+
+        let element = *self.squares.get(index)?;
+
+        Some(element)
+    }
 }
 
 #[cfg(test)]
