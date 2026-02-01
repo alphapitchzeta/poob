@@ -1,10 +1,10 @@
-//use chess::bitboards::*;
-//use chess::boardstate::*;
-//use chess::rende::*;
-use chess::game::Game;
-//use chess::moves::*;
-use chess::movegen::*;
-use chess::perft::*;
+//use poob::bitboards::*;
+//use poob::boardstate::*;
+//use poob::rende::*;
+use poob::game::Game;
+//use poob::moves::*;
+use poob::movegen::*;
+use poob::perft::*;
 
 use std::io::Write;
 use std::{
