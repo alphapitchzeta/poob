@@ -92,19 +92,22 @@ use crate::moves::Move;
 use crate::{Color, Piece};
 use bitboard_constants::{bitboard_indices::*, castle_squares::*, masks::*, starting_positions::*};
 
-/// Error variants when constructing a new bitboard
+/// Error variants when constructing a new bitboard.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BitBoardCreationError {
     PieceOverlap,
     BadKingCount,
 }
 
+/// Error variants when converting a square to a
+/// bitboard.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BitBoardConversionError {
     BadSquare,
     BadBitboard,
 }
 
+/// Error variants when making a [`Move`] is invalid.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BitBoardMoveError {
     NoInitialSquarePiece,
@@ -115,6 +118,8 @@ pub trait From<BitBoardCreationError> {
     fn from(err: BitBoardCreationError) -> Self;
 }
 
+/// Struct containing bitboards for every [`Piece`] of
+/// every [`Color`].
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BitBoards {
     boards: [[u64; 6]; 2],
@@ -287,6 +292,8 @@ impl BitBoards {
         }
     }
 
+    /// Converts a square index to a bitboard. Returns a [`Result`]; the [`Err`] variant
+    /// containing a [`BitBoardConversionError`].
     pub fn square_to_bitboard(square: u8) -> Result<u64, BitBoardConversionError> {
         if square > 63 {
             return Err(BitBoardConversionError::BadSquare);
@@ -295,10 +302,13 @@ impl BitBoards {
         Ok(1 << square)
     }
 
+    /// Converts a square index to a bitboard.
     pub fn unchecked_square_to_bitboard(square: u8) -> u64 {
         1 << square
     }
 
+    /// Converts a bitboard to a square index. Returns a [`Result`]; the [`Err`] variant
+    /// containing a [`BitBoardConversionError`].
     pub fn bitboard_to_square(bitboard: u64) -> Result<u8, BitBoardConversionError> {
         if bitboard.count_ones() != 1 {
             return Err(BitBoardConversionError::BadBitboard);
@@ -307,6 +317,7 @@ impl BitBoards {
         Ok(bitboard.trailing_zeros() as u8)
     }
 
+    /// Converts a bitboard to a square index.
     pub fn unchecked_bitboard_to_square(bitboard: u64) -> u8 {
         bitboard.trailing_zeros() as u8
     }
