@@ -1,4 +1,5 @@
 use crate::Color;
+use crate::bitboard_types::*;
 use crate::bitboards::BitBoards;
 
 pub fn print_bitboard(bitboard: &BitBoards, perspective: Color) {
@@ -51,9 +52,9 @@ pub fn print_bitboard(bitboard: &BitBoards, perspective: Color) {
     };
 }
 
-fn set_pieces(board: &mut [[char; 8]; 8], bitboard: u64, c: char) {
+fn set_pieces(board: &mut [[char; 8]; 8], bitboard: BitBoard, c: char) {
     for i in 0..64 {
-        if bitboard & 1 << i == 0 {
+        if bitboard & BitBoard(1 << i) == BitBoard(0) {
             continue;
         }
 
