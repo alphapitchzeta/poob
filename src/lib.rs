@@ -1,3 +1,4 @@
+pub mod bitboard_types;
 pub mod bitboards;
 pub mod boardstate;
 pub mod game;
