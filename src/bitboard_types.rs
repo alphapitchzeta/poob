@@ -88,6 +88,62 @@ impl BitXorAssign for BitBoard {
     }
 }
 
+impl Shl for BitBoard {
+    type Output = Self;
+
+    fn shl(self, rhs: Self) -> Self::Output {
+        Self(self.0 << rhs.0)
+    }
+}
+
+impl ShlAssign for BitBoard {
+    fn shl_assign(&mut self, rhs: Self) {
+        *self = *self << rhs;
+    }
+}
+
+impl Shr for BitBoard {
+    type Output = Self;
+
+    fn shr(self, rhs: Self) -> Self::Output {
+        Self(self.0 >> rhs.0)
+    }
+}
+
+impl ShrAssign for BitBoard {
+    fn shr_assign(&mut self, rhs: Self) {
+        *self = *self >> rhs;
+    }
+}
+
+impl<I: Into<u8>> Shl<I> for BitBoard {
+    type Output = Self;
+
+    fn shl(self, rhs: I) -> Self::Output {
+        Self(self.0 << rhs.into())
+    }
+}
+
+impl<I: Into<u8>> ShlAssign<I> for BitBoard {
+    fn shl_assign(&mut self, rhs: I) {
+        *self = *self << rhs.into();
+    }
+}
+
+impl<I: Into<u8>> Shr<I> for BitBoard {
+    type Output = Self;
+
+    fn shr(self, rhs: I) -> Self::Output {
+        Self(self.0 >> rhs.into())
+    }
+}
+
+impl<I: Into<u8>> ShrAssign<I> for BitBoard {
+    fn shr_assign(&mut self, rhs: I) {
+        *self = *self >> rhs.into();
+    }
+}
+
 impl Not for BitBoard {
     type Output = Self;
 
@@ -96,7 +152,7 @@ impl Not for BitBoard {
     }
 }
 
-pub const SQUARES: u8 = 64;
+pub const SQUARES: usize = 64;
 
 #[repr(u8)]
 #[rustfmt::skip]
@@ -118,9 +174,44 @@ impl Square {
     }
 
     pub const fn new(value: u8) -> Self {
-        debug_assert!(value < SQUARES);
+        debug_assert!(value < SQUARES as u8);
 
         unsafe { std::mem::transmute(value) }
+    }
+
+    pub fn to_bitboard(self) -> BitBoard {
+        BitBoard(1 << self as u8)
+    }
+
+    pub fn from_str(s: &str) -> Option<Self> {
+        let mut chars = s.chars();
+
+        let file = chars.next()?;
+        
+        if file == '-' {
+            return None;
+        }
+
+        let file = file as u8 - 'a' as u8;
+        let rank = (chars.next()?.to_digit(10)?) as u8;
+
+        let index = rank * file;
+
+        match index {
+            0..64 => Some(Square::new(index)),
+            _ => None,
+        }
+    }
+
+    pub fn to_str(self) -> String {
+        let index = self as u8;
+
+        let mut s = String::with_capacity(2);
+
+        s.push((index % 8 + 'a' as u8) as char);
+        s.push((index / 8 + '1' as u8) as char);
+
+        s
     }
 }
 
@@ -128,7 +219,7 @@ impl Add for Square {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Self::new(self as u8 + rhs as u8)
+        Self::new((self as u8).checked_add(rhs as u8).unwrap_or(63))
     }
 }
 
@@ -136,7 +227,7 @@ impl Sub for Square {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Self::new(self as u8 - rhs as u8)
+        Self::new((self as u8).checked_sub(rhs as u8).unwrap_or(0))
     }
 }
 
@@ -191,11 +282,11 @@ mod tests {
         let mut test_bitboard = BitBoard(0);
 
         for i in (0..SQUARES).step_by(8) {
-            test_bitboard.set(Square::new(i));
+            test_bitboard.set(Square::new(i as u8));
         }
 
         for (set_bit, square) in test_bitboard.zip((0..SQUARES).step_by(8)) {
-            assert_eq!(set_bit, Square::new(square))
+            assert_eq!(set_bit, Square::new(square as u8))
         }
 
         //assert_eq!(test_bitboard, BitBoard(0));
