@@ -1,10 +1,11 @@
 //use poob::bitboards::*;
 //use poob::boardstate::*;
 //use poob::rende::*;
-use poob::game::Game;
+//use poob::game::Game;
 //use poob::moves::*;
 use poob::movegen::*;
 use poob::perft::*;
+use poob::cli::Session;
 
 use std::io::Write;
 use std::{
@@ -13,7 +14,11 @@ use std::{
 };
 
 fn main() {
+    let move_gen = MoveGenerator::new();
 
+    let mut session = Session::new(&move_gen);
+
+    session.run();
 }
 
 #[allow(dead_code)]
