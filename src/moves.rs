@@ -25,7 +25,7 @@ pub mod move_constants {
 /// The maximum possible moves from any given chess position.
 const MAX_POSSIBLE_MOVES: usize = 218;
 
-use crate::bitboard_types::*;
+use crate::util::*;
 use move_constants::*;
 
 /// Struct encapsulating the logic for encoding and decoding moves.
@@ -38,19 +38,40 @@ impl Move {
         Self(0)
     }
 
-    /// Returns a [`Move`] instance given an initial and target [`Square`].
-    pub fn unchecked_from_squares(initial_square: Square, target_square: Square) -> Self {
+    /// Returns an optional [`Move`] instance from square indices.
+    pub fn from_squares(initial_square: u8, target_square: u8) -> Option<Self> {
+        let initial_square = checked_square_u8_to_square_u16(initial_square)?;
+        let target_square = checked_square_u8_to_square_u16(target_square)?;
+
+        Some(Self((initial_square << 6) | target_square))
+    }
+
+    /// Returns a [`Move`] instance from square indices. Do not call this
+    /// with invalid square indices. Bad things will happen.
+    pub fn unchecked_from_squares(initial_square: u8, target_square: u8) -> Self {
         Self(((initial_square as u16) << 6) | target_square as u16)
     }
 
-    /// Extracts the initial [`Square`] encoded in the move and returns it.
-    pub fn initial_square(&self) -> Square {
-        Square::new(((self.0 >> 6) & 0b111111) as u8)
+    /// Returns an optional [`Move`] instance from square string slices.
+    pub fn from_squares_str(initial_square: &str, target_square: &str) -> Option<Self> {
+        let i_square_index = square_str_to_index(initial_square)?;
+        let t_square_index = square_str_to_index(target_square)?;
+
+        let new_move = Move::from_squares(i_square_index, t_square_index)?;
+
+        Some(new_move)
     }
 
-    /// Extracts the target [`Square`] encoded in the move and returns it.
-    pub fn target_square(&self) -> Square {
-        Square::new((self.0 & 0b111111) as u8)
+    /// Extracts the initial square encoded in the move and returns
+    /// it as a [`u8`].
+    pub fn get_initial_square(&self) -> u8 {
+        ((self.0 >> 6) & 0b111111) as u8
+    }
+
+    /// Extracts the target square encoded in the move and returns
+    /// it as a [`u8`].
+    pub fn get_target_square(&self) -> u8 {
+        (self.0 & 0b111111) as u8
     }
 
     /// Returns `true` if the [`QUIET_MOVE`] bitflag is set, and `false`
@@ -257,17 +278,6 @@ impl Move {
     }
 }
 
-impl ToString for Move {
-    fn to_string(&self) -> String {
-        let mut out_string = String::with_capacity(4);
-
-        out_string.push_str(&self.initial_square().to_str());
-        out_string.push_str(&self.target_square().to_str());
-
-        out_string
-    }
-}
-
 /// Struct representing a [`Move`] and its corresponding score.
 #[derive(Debug, Clone, Copy)]
 pub struct MoveScore {
@@ -326,11 +336,6 @@ impl MoveList {
     /// this sort is unstable.
     pub fn sort(&mut self) {
         self.list[0..self.len].sort_unstable_by_key(|mv| mv.score);
-    }
-
-    /// Sorts the [`MoveScore`] elements in the [`MoveList`] by their [`String`] representation.
-    pub fn sort_alphanumeric(&mut self) {
-        self.list[0..self.len].sort_unstable_by_key(|mv_score| mv_score.mv.to_string());
     }
 
     /// Appends a new [`MoveScore`] to the [`MoveList`].
@@ -427,12 +432,12 @@ mod tests {
 
     #[test]
     fn test_from_squares() {
-        let i_square = Square::new(8);
-        let t_square = Square::new(24);
+        let i_square = 8;
+        let t_square = 24;
 
         assert_eq!(
-            Move::unchecked_from_squares(i_square, t_square),
-            Move(0b00000010_00011000)
+            Move::from_squares(i_square, t_square),
+            Some(Move(0b00000010_00011000))
         );
     }
 }
