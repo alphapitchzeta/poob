@@ -132,7 +132,7 @@ pub trait From<BitBoardCreationError> {
 
 /// Struct containing bitboards for every [`Piece`] of
 /// every [`Color`].
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BitBoards {
     boards: [[BitBoard; 6]; 2],
 }
