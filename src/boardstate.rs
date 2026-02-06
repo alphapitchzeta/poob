@@ -39,7 +39,7 @@ pub enum FenStringError {
     BadTurnCount,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BoardState {
     pub position: BitBoards,
     pub side_to_move: Color,
@@ -423,6 +423,7 @@ impl BoardState {
                     self.position.promote_white(mv);
                 } else if mv.is_double_pawn_push() {
                     self.en_passant_square = Some(mv.initial_square() + Square::new(8));
+                    self.position.move_piece(mv);
                 } else {
                     self.position.move_piece(mv);
                 }
@@ -443,6 +444,7 @@ impl BoardState {
                     self.position.promote_black(mv);
                 } else if mv.is_double_pawn_push() {
                     self.en_passant_square = Some(mv.initial_square() - Square::new(8));
+                    self.position.move_piece(mv);
                 } else {
                     self.position.move_piece(mv);
                 }
@@ -538,5 +540,22 @@ mod tests {
         let board_state = BoardState::from_fen(fen).unwrap();
 
         assert_eq!(board_state.to_fen(), fen.to_string());
+    }
+
+    #[test]
+    fn test_make_move() {
+        let startpos = BoardState::default();
+
+        let mut mv = Move::unchecked_from_squares(Square::D2, Square::D4);
+        mv.set_double_pawn_push();
+
+        let mut new_pos = startpos.clone();
+        new_pos.make_move(mv);
+        let new_pos2 = BoardState::from_fen(&new_pos.to_fen()).unwrap();
+
+        eprintln!("{:?}", new_pos);
+        eprintln!("{:?}", new_pos2);
+
+        assert_eq!(new_pos, new_pos2);
     }
 }
