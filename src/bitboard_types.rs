@@ -187,15 +187,15 @@ impl Square {
         let mut chars = s.chars();
 
         let file = chars.next()?;
-        
+
         if file == '-' {
             return None;
         }
 
         let file = file as u8 - 'a' as u8;
-        let rank = (chars.next()?.to_digit(10)?) as u8;
+        let rank = chars.next()? as u8 - '1' as u8;
 
-        let index = rank * file;
+        let index = 8 * rank + file;
 
         match index {
             0..64 => Some(Square::new(index)),
