@@ -63,7 +63,7 @@ impl Game<'_> {
         self.board_state.to_fen()
     }
 
-    /// Returns a [`BitBoard`] bitboard of all squares being attacked by pieces of a given [color](crate::Color).
+    /// Returns a [`BitBoard`] of all squares being attacked by pieces of a given [color](crate::Color).
     /// This includes squares currently occupied by other friendly pieces.
     pub fn get_attacks(&self, checked_color: Color) -> BitBoard {
         let mut attacks = BitBoard(0);
@@ -344,7 +344,7 @@ impl Game<'_> {
             let mut mv = Move::unchecked_from_squares(initial_square, target_square);
 
             match (target_square - initial_square) as u8 {
-                16 if !((enemy_pieces & (target_square_bit >> 8)).is_empty()) => continue,
+                16 if !(((enemy_pieces | friendly_pieces) & (target_square_bit >> 8)).is_empty()) => continue,
                 16 => mv.set_double_pawn_push(),
                 _ => (),
             };
