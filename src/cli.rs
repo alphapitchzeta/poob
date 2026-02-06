@@ -1,5 +1,5 @@
-use std::str::FromStr;
 use std::io::{self, Write};
+use std::str::FromStr;
 
 use crate::moves::MoveListIterator;
 use crate::{boardstate::*, game::*, movegen::MoveGenerator, perft::*};
@@ -43,7 +43,7 @@ impl Session<'_> {
                 Err(e) => {
                     println!("Error: {e:?}");
                     continue;
-                },
+                }
             };
 
             match self.execute(command) {
@@ -115,15 +115,19 @@ impl FromStr for Command {
             "d" | "display" => Ok(Command::Display),
             "position" => Ok(Command::SetPosition(
                 chunks
-                    .collect::<String>()
+                    .map(|s| s.to_string())
+                    .collect::<Vec<_>>()
+                    .join(" ")
                     .parse::<Position>()
                     .map_err(|e| ParseCommandError::ParsePositionError(e))?,
             )),
             "perft" => Ok(Command::Perft(
                 chunks
-                .collect::<String>()
-                .parse()
-                .map_err(|_| ParseCommandError::BadPerftDepth)?,
+                    .map(|s| s.to_string())
+                    .collect::<Vec<_>>()
+                    .join(" ")
+                    .parse()
+                    .map_err(|_| ParseCommandError::BadPerftDepth)?,
             )),
             _ => Err(ParseCommandError::BadCommand),
         }
@@ -151,7 +155,12 @@ impl FromStr for Position {
 
         match chunks.next().ok_or(ParsePositionError::NoPosition)? {
             "startpos" | "default" => Ok(Position::StartPos),
-            "fen" => Ok(Position::Fen(chunks.collect())),
+            "fen" => Ok(Position::Fen(
+                chunks
+                    .map(|s| s.to_string())
+                    .collect::<Vec<String>>()
+                    .join(" "),
+            )),
             _ => Err(ParsePositionError::BadPosition),
         }
     }
