@@ -1,7 +1,7 @@
 use std::io::{self, Write};
 use std::str::FromStr;
 
-use crate::moves::MoveListIterator;
+use crate::moves::*;
 use crate::{boardstate::*, game::*, movegen::MoveGenerator, perft::*};
 
 pub struct Session<'a> {
@@ -54,11 +54,20 @@ impl Session<'_> {
         }
     }
 
-    fn execute(&mut self, command: Command) -> Result<bool, BoardStateCreationError> {
+    fn execute(&mut self, command: Command) -> Result<bool, CommandExecutionError> {
         match command {
             Command::Exit => return Ok(false),
             Command::Display => self.game.print(),
-            Command::SetPosition(position) => self.set_position(position)?,
+            Command::SetPosition(position) => self
+                .set_position(position)
+                .map_err(|e| CommandExecutionError::BoardStateCreationError(e))?,
+            Command::Move(mv) => {
+                let checked_move = self
+                    .game
+                    .match_move(mv)
+                    .ok_or(CommandExecutionError::InvalidMoveError)?;
+                self.game.unchecked_make_move(checked_move);
+            }
             Command::Perft(depth) => self.perft(depth),
         };
 
@@ -92,6 +101,7 @@ pub enum Command {
     SetPosition(Position),
     Perft(usize),
     Display,
+    Move(Move),
     Exit,
 }
 
@@ -101,7 +111,15 @@ pub enum ParseCommandError {
     NoCommand,
     BadPerftDepth,
     NoPerftDepth,
+    NoMove,
+    ParseMoveError(ParseMoveError),
     ParsePositionError(ParsePositionError),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum CommandExecutionError {
+    BoardStateCreationError(BoardStateCreationError),
+    InvalidMoveError,
 }
 
 impl FromStr for Command {
@@ -128,6 +146,13 @@ impl FromStr for Command {
                     .join(" ")
                     .parse()
                     .map_err(|_| ParseCommandError::BadPerftDepth)?,
+            )),
+            "move" => Ok(Command::Move(
+                chunks
+                    .map(|s| s.to_string())
+                    .collect::<String>()
+                    .parse()
+                    .map_err(|e| ParseCommandError::ParseMoveError(e))?,
             )),
             _ => Err(ParseCommandError::BadCommand),
         }
