@@ -462,19 +462,19 @@ impl BoardState {
             self.fifty_move_rule += 1;
         }
 
-        if !(self.position.rooks_white() & (DEFAULT_ROOKS_WHITE & FILE_A)).is_empty() {
+        if (self.position.rooks_white() & (DEFAULT_ROOKS_WHITE & FILE_A)).is_empty() {
             self.remove_castling_rights_queenside_white();
         }
 
-        if !(self.position.rooks_black() & (DEFAULT_BISHOPS_BLACK & FILE_A)).is_empty() {
+        if (self.position.rooks_black() & (DEFAULT_ROOKS_BLACK & FILE_A)).is_empty() {
             self.remove_castling_rights_queenside_black();
         }
 
-        if !(self.position.rooks_white() & (DEFAULT_ROOKS_WHITE & FILE_H)).is_empty() {
+        if (self.position.rooks_white() & (DEFAULT_ROOKS_WHITE & FILE_H)).is_empty() {
             self.remove_castling_rights_kingside_white();
         }
 
-        if !(self.position.rooks_black() & (DEFAULT_ROOKS_BLACK & FILE_H)).is_empty() {
+        if (self.position.rooks_black() & (DEFAULT_ROOKS_BLACK & FILE_H)).is_empty() {
             self.remove_castling_rights_kingside_black();
         }
 
