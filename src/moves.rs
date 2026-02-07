@@ -25,6 +25,8 @@ pub mod move_constants {
 /// The maximum possible moves from any given chess position.
 const MAX_POSSIBLE_MOVES: usize = 218;
 
+use std::str::FromStr;
+
 use crate::bitboard_types::*;
 use move_constants::*;
 
@@ -254,6 +256,30 @@ impl Move {
     pub fn set_queen_promotion_capture(&mut self) {
         self.0 &= QUIET_MASK;
         self.0 |= QUEEN_PROMOTION_CAPTURE;
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum ParseMoveError {
+    BadInitialSquare,
+    BadTargetSquare,
+    MalformedString,
+}
+
+impl FromStr for Move {
+    type Err = ParseMoveError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() != 4 {
+            return Err(ParseMoveError::MalformedString);
+        }
+
+        let (i_square_str, t_square_str) = s.split_at(2);
+
+        let i_square = Square::from_str(i_square_str).ok_or(ParseMoveError::BadInitialSquare)?;
+        let t_square = Square::from_str(t_square_str).ok_or(ParseMoveError::BadTargetSquare)?;
+
+        Ok(Self::unchecked_from_squares(i_square, t_square))
     }
 }
 
