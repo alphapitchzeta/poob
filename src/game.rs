@@ -420,7 +420,7 @@ impl Game<'_> {
             let mut mv = Move::unchecked_from_squares(initial_square, target_square);
 
             match (initial_square - target_square) as u8 {
-                16 if !((enemy_pieces & (target_square_bit << 8)).is_empty()) => continue,
+                16 if !(((enemy_pieces | friendly_pieces) & (target_square_bit << 8)).is_empty()) => continue,
                 16 => mv.set_double_pawn_push(),
                 _ => (),
             };
@@ -551,13 +551,13 @@ impl Game<'_> {
         let enemy_attacks = self.get_attacks(Color::Black);
 
         if self.can_castle_kingside_white(friendly_pieces | enemy_pieces, enemy_attacks) {
-            let mut mv = Move::new();
+            let mut mv = Move::unchecked_from_squares(Square::E1, Square::G1);
             mv.set_kingside_castle();
             moves.push(MoveScore::new(mv));
         }
 
         if self.can_castle_queenside_white(friendly_pieces | enemy_pieces, enemy_attacks) {
-            let mut mv = Move::new();
+            let mut mv = Move::unchecked_from_squares(Square::E1, Square::C1);
             mv.set_queenside_castle();
             moves.push(MoveScore::new(mv));
         }
@@ -591,13 +591,13 @@ impl Game<'_> {
         let enemy_attacks = self.get_attacks(Color::White);
 
         if self.can_castle_kingside_black(friendly_pieces | enemy_pieces, enemy_attacks) {
-            let mut mv = Move::new();
+            let mut mv = Move::unchecked_from_squares(Square::E8, Square::G8);
             mv.set_kingside_castle();
             moves.push(MoveScore::new(mv));
         }
 
         if self.can_castle_queenside_black(friendly_pieces | enemy_pieces, enemy_attacks) {
-            let mut mv = Move::new();
+            let mut mv = Move::unchecked_from_squares(Square::E8, Square::C8);
             mv.set_queenside_castle();
             moves.push(MoveScore::new(mv));
         }
