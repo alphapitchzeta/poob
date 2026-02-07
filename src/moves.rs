@@ -20,6 +20,7 @@ pub mod move_constants {
     /// Used with a bitwise AND operation to set the bitflag of
     /// a [`Move`](super::Move) to [`QUIET_MOVE`].
     pub const QUIET_MASK: u16 = !(0b1111 << 12);
+    pub const FLAG_MASK: u16 = 0b1111 << 12;
 }
 
 /// The maximum possible moves from any given chess position.
@@ -69,7 +70,7 @@ impl Move {
     /// Returns `true` if the [`DOUBLE_PAWN_PUSH`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_double_pawn_push(&self) -> bool {
-        self.0 & DOUBLE_PAWN_PUSH == DOUBLE_PAWN_PUSH
+        self.0 & FLAG_MASK == DOUBLE_PAWN_PUSH
     }
 
     /// Sets the bitflag of the [`Move`] to [`DOUBLE_PAWN_PUSH`].
@@ -81,7 +82,7 @@ impl Move {
     /// Returns `true` if the [`KING_CASTLE`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_kingside_castle(&self) -> bool {
-        self.0 & KING_CASTLE == KING_CASTLE
+        self.0 & FLAG_MASK == KING_CASTLE
     }
 
     /// Sets the bitflag of the [`Move`] to [KING_CASTLE].
@@ -93,7 +94,7 @@ impl Move {
     /// Returns `true` if the [`QUEEN_CASTLE`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_queenside_castle(&self) -> bool {
-        self.0 & QUEEN_CASTLE == QUEEN_CASTLE
+        self.0 & FLAG_MASK == QUEEN_CASTLE
     }
 
     /// Sets the bitflag of the [`Move`] to [`QUEEN_CASTLE`].
@@ -123,7 +124,7 @@ impl Move {
     /// Returns `true` if the [`EN_PASSANT_CAPTURE`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_en_passant_capture(&self) -> bool {
-        self.0 & EN_PASSANT_CAPTURE == EN_PASSANT_CAPTURE
+        self.0 & FLAG_MASK == EN_PASSANT_CAPTURE
     }
 
     /// Sets the bitflag of the [`Move`] to [`EN_PASSANT_CAPTURE`].
@@ -141,7 +142,7 @@ impl Move {
     /// Returns `true` if the [`KNIGHT_PROMOTION`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_knight_promotion(&self) -> bool {
-        self.0 & KNIGHT_PROMOTION == KNIGHT_PROMOTION
+        self.0 & FLAG_MASK == KNIGHT_PROMOTION
     }
 
     /// Sets the bitflag of the [`Move`] to [`KNIGHT_PROMOTION`].
@@ -159,7 +160,7 @@ impl Move {
     /// Returns `true` if the [`BISHOP_PROMOTION`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_bishop_promotion(&self) -> bool {
-        self.0 & BISHOP_PROMOTION == BISHOP_PROMOTION
+        self.0 & FLAG_MASK == BISHOP_PROMOTION
     }
 
     /// Sets the bitflag of the [`Move`] to [`BISHOP_PROMOTION`].
@@ -177,7 +178,7 @@ impl Move {
     /// Returns `true` if the [`ROOK_PROMOTION`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_rook_promotion(&self) -> bool {
-        self.0 & ROOK_PROMOTION == ROOK_PROMOTION
+        self.0 & FLAG_MASK == ROOK_PROMOTION
     }
 
     /// Sets the bitflag of the [`Move`] to [`ROOK_PROMOTION`].
@@ -195,7 +196,7 @@ impl Move {
     /// Returns `true` if the [`QUEEN_PROMOTION`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_queen_promotion(&self) -> bool {
-        self.0 & QUEEN_PROMOTION == QUEEN_PROMOTION
+        self.0 & FLAG_MASK == QUEEN_PROMOTION
     }
 
     /// Sets the bitflag of the [`Move`] to [`QUEEN_PROMOTION`].
@@ -213,7 +214,7 @@ impl Move {
     /// Returns `true` if the [`KNIGHT_PROMOTION_CAPTURE`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_knight_promotion_capture(&self) -> bool {
-        self.0 & KNIGHT_PROMOTION_CAPTURE == KNIGHT_PROMOTION_CAPTURE
+        self.0 & FLAG_MASK == KNIGHT_PROMOTION_CAPTURE
     }
 
     /// Sets the bitflag of the [`Move`] to [`KNIGHT_PROMOTION_CAPTURE`].
@@ -225,7 +226,7 @@ impl Move {
     /// Returns `true` if the [`BISHOP_PROMOTION_CAPTURE`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_bishop_promotion_capture(&self) -> bool {
-        self.0 & BISHOP_PROMOTION_CAPTURE == BISHOP_PROMOTION_CAPTURE
+        self.0 & FLAG_MASK == BISHOP_PROMOTION_CAPTURE
     }
 
     /// Sets the bitflag of the [`Move`] to [`BISHOP_PROMOTION_CAPTURE`].
@@ -237,7 +238,7 @@ impl Move {
     /// Returns `true` if the [`ROOK_PROMOTION_CAPTURE`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_rook_promotion_capture(&self) -> bool {
-        self.0 & ROOK_PROMOTION_CAPTURE == ROOK_PROMOTION_CAPTURE
+        self.0 & FLAG_MASK == ROOK_PROMOTION_CAPTURE
     }
 
     /// Sets the bitflag of the [`Move`] to [`ROOK_PROMOTION_CAPTURE`].
@@ -249,7 +250,7 @@ impl Move {
     /// Returns `true` if the [`QUEEN_PROMOTION_CAPTURE`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_queen_promotion_capture(&self) -> bool {
-        self.0 & QUEEN_PROMOTION_CAPTURE == QUEEN_PROMOTION_CAPTURE
+        self.0 & FLAG_MASK == QUEEN_PROMOTION_CAPTURE
     }
 
     /// Sets the bitflag of the [`Move`] to [`QUEEN_PROMOTION_CAPTURE`].
