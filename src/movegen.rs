@@ -160,7 +160,7 @@ impl MoveGenerator {
             let mut sw_fill = bishop & NOT_A1;
 
             for _ in 0..8 {
-                sw_fill >>= 7;
+                sw_fill >>= 9;
                 attacks |= sw_fill;
 
                 sw_fill &= open_squares & NOT_A1;
@@ -171,7 +171,7 @@ impl MoveGenerator {
             let mut se_fill = bishop & NOT_H1;
 
             for _ in 0..8 {
-                se_fill >>= 9;
+                se_fill >>= 7;
                 attacks |= se_fill;
 
                 se_fill &= open_squares & NOT_H1;
