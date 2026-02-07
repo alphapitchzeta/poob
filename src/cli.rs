@@ -57,7 +57,10 @@ impl Session<'_> {
     fn execute(&mut self, command: Command) -> Result<bool, CommandExecutionError> {
         match command {
             Command::Exit => return Ok(false),
-            Command::Display => self.game.print(),
+            Command::Display => {
+                self.game.print();
+                println!("FEN: {}", self.game.to_fen());
+            },
             Command::SetPosition(position) => self
                 .set_position(position)
                 .map_err(|e| CommandExecutionError::BoardStateCreationError(e))?,
