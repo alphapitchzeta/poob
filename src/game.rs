@@ -344,7 +344,11 @@ impl Game<'_> {
             let mut mv = Move::unchecked_from_squares(initial_square, target_square);
 
             match (target_square - initial_square) as u8 {
-                16 if !(((enemy_pieces | friendly_pieces) & (target_square_bit >> 8)).is_empty()) => continue,
+                16 if !(((enemy_pieces | friendly_pieces) & (target_square_bit >> 8))
+                    .is_empty()) =>
+                {
+                    continue;
+                }
                 16 => mv.set_double_pawn_push(),
                 _ => (),
             };
@@ -420,7 +424,11 @@ impl Game<'_> {
             let mut mv = Move::unchecked_from_squares(initial_square, target_square);
 
             match (initial_square - target_square) as u8 {
-                16 if !(((enemy_pieces | friendly_pieces) & (target_square_bit << 8)).is_empty()) => continue,
+                16 if !(((enemy_pieces | friendly_pieces) & (target_square_bit << 8))
+                    .is_empty()) =>
+                {
+                    continue;
+                }
                 16 => mv.set_double_pawn_push(),
                 _ => (),
             };
@@ -739,6 +747,23 @@ impl Game<'_> {
 
     pub fn unchecked_make_move(&mut self, mv: Move) {
         self.board_state.make_move(mv);
+    }
+
+    pub fn match_move(&self, possible_move: Move) -> Option<Move> {
+        let move_list = self.enumerate_moves();
+        let move_list = MoveListIterator::new(&move_list);
+
+        for valid_move in move_list {
+            if (valid_move.mv.initial_square() != possible_move.initial_square())
+                | (valid_move.mv.target_square() != possible_move.target_square())
+            {
+                continue;
+            }
+
+            return Some(valid_move.mv);
+        }
+
+        None
     }
 }
 
