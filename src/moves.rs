@@ -20,12 +20,15 @@ pub mod move_constants {
     /// Used with a bitwise AND operation to set the bitflag of
     /// a [`Move`](super::Move) to [`QUIET_MOVE`].
     pub const QUIET_MASK: u16 = !(0b1111 << 12);
+    pub const FLAG_MASK: u16 = 0b1111 << 12;
 }
 
 /// The maximum possible moves from any given chess position.
 const MAX_POSSIBLE_MOVES: usize = 218;
 
-use crate::util::*;
+use std::str::FromStr;
+
+use crate::bitboard_types::*;
 use move_constants::*;
 
 /// Struct encapsulating the logic for encoding and decoding moves.
@@ -38,40 +41,19 @@ impl Move {
         Self(0)
     }
 
-    /// Returns an optional [`Move`] instance from square indices.
-    pub fn from_squares(initial_square: u8, target_square: u8) -> Option<Self> {
-        let initial_square = checked_square_u8_to_square_u16(initial_square)?;
-        let target_square = checked_square_u8_to_square_u16(target_square)?;
-
-        Some(Self((initial_square << 6) | target_square))
-    }
-
-    /// Returns a [`Move`] instance from square indices. Do not call this
-    /// with invalid square indices. Bad things will happen.
-    pub fn unchecked_from_squares(initial_square: u8, target_square: u8) -> Self {
+    /// Returns a [`Move`] instance given an initial and target [`Square`].
+    pub fn unchecked_from_squares(initial_square: Square, target_square: Square) -> Self {
         Self(((initial_square as u16) << 6) | target_square as u16)
     }
 
-    /// Returns an optional [`Move`] instance from square string slices.
-    pub fn from_squares_str(initial_square: &str, target_square: &str) -> Option<Self> {
-        let i_square_index = square_str_to_index(initial_square)?;
-        let t_square_index = square_str_to_index(target_square)?;
-
-        let new_move = Move::from_squares(i_square_index, t_square_index)?;
-
-        Some(new_move)
+    /// Extracts the initial [`Square`] encoded in the move and returns it.
+    pub fn initial_square(&self) -> Square {
+        Square::new(((self.0 >> 6) & 0b111111) as u8)
     }
 
-    /// Extracts the initial square encoded in the move and returns
-    /// it as a [`u8`].
-    pub fn get_initial_square(&self) -> u8 {
-        ((self.0 >> 6) & 0b111111) as u8
-    }
-
-    /// Extracts the target square encoded in the move and returns
-    /// it as a [`u8`].
-    pub fn get_target_square(&self) -> u8 {
-        (self.0 & 0b111111) as u8
+    /// Extracts the target [`Square`] encoded in the move and returns it.
+    pub fn target_square(&self) -> Square {
+        Square::new((self.0 & 0b111111) as u8)
     }
 
     /// Returns `true` if the [`QUIET_MOVE`] bitflag is set, and `false`
@@ -88,7 +70,7 @@ impl Move {
     /// Returns `true` if the [`DOUBLE_PAWN_PUSH`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_double_pawn_push(&self) -> bool {
-        self.0 & DOUBLE_PAWN_PUSH == DOUBLE_PAWN_PUSH
+        self.0 & FLAG_MASK == DOUBLE_PAWN_PUSH
     }
 
     /// Sets the bitflag of the [`Move`] to [`DOUBLE_PAWN_PUSH`].
@@ -100,7 +82,7 @@ impl Move {
     /// Returns `true` if the [`KING_CASTLE`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_kingside_castle(&self) -> bool {
-        self.0 & KING_CASTLE == KING_CASTLE
+        self.0 & FLAG_MASK == KING_CASTLE
     }
 
     /// Sets the bitflag of the [`Move`] to [KING_CASTLE].
@@ -112,7 +94,7 @@ impl Move {
     /// Returns `true` if the [`QUEEN_CASTLE`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_queenside_castle(&self) -> bool {
-        self.0 & QUEEN_CASTLE == QUEEN_CASTLE
+        self.0 & FLAG_MASK == QUEEN_CASTLE
     }
 
     /// Sets the bitflag of the [`Move`] to [`QUEEN_CASTLE`].
@@ -142,7 +124,7 @@ impl Move {
     /// Returns `true` if the [`EN_PASSANT_CAPTURE`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_en_passant_capture(&self) -> bool {
-        self.0 & EN_PASSANT_CAPTURE == EN_PASSANT_CAPTURE
+        self.0 & FLAG_MASK == EN_PASSANT_CAPTURE
     }
 
     /// Sets the bitflag of the [`Move`] to [`EN_PASSANT_CAPTURE`].
@@ -160,7 +142,7 @@ impl Move {
     /// Returns `true` if the [`KNIGHT_PROMOTION`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_knight_promotion(&self) -> bool {
-        self.0 & KNIGHT_PROMOTION == KNIGHT_PROMOTION
+        self.0 & FLAG_MASK == KNIGHT_PROMOTION
     }
 
     /// Sets the bitflag of the [`Move`] to [`KNIGHT_PROMOTION`].
@@ -178,7 +160,7 @@ impl Move {
     /// Returns `true` if the [`BISHOP_PROMOTION`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_bishop_promotion(&self) -> bool {
-        self.0 & BISHOP_PROMOTION == BISHOP_PROMOTION
+        self.0 & FLAG_MASK == BISHOP_PROMOTION
     }
 
     /// Sets the bitflag of the [`Move`] to [`BISHOP_PROMOTION`].
@@ -196,7 +178,7 @@ impl Move {
     /// Returns `true` if the [`ROOK_PROMOTION`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_rook_promotion(&self) -> bool {
-        self.0 & ROOK_PROMOTION == ROOK_PROMOTION
+        self.0 & FLAG_MASK == ROOK_PROMOTION
     }
 
     /// Sets the bitflag of the [`Move`] to [`ROOK_PROMOTION`].
@@ -214,7 +196,7 @@ impl Move {
     /// Returns `true` if the [`QUEEN_PROMOTION`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_queen_promotion(&self) -> bool {
-        self.0 & QUEEN_PROMOTION == QUEEN_PROMOTION
+        self.0 & FLAG_MASK == QUEEN_PROMOTION
     }
 
     /// Sets the bitflag of the [`Move`] to [`QUEEN_PROMOTION`].
@@ -232,7 +214,7 @@ impl Move {
     /// Returns `true` if the [`KNIGHT_PROMOTION_CAPTURE`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_knight_promotion_capture(&self) -> bool {
-        self.0 & KNIGHT_PROMOTION_CAPTURE == KNIGHT_PROMOTION_CAPTURE
+        self.0 & FLAG_MASK == KNIGHT_PROMOTION_CAPTURE
     }
 
     /// Sets the bitflag of the [`Move`] to [`KNIGHT_PROMOTION_CAPTURE`].
@@ -244,7 +226,7 @@ impl Move {
     /// Returns `true` if the [`BISHOP_PROMOTION_CAPTURE`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_bishop_promotion_capture(&self) -> bool {
-        self.0 & BISHOP_PROMOTION_CAPTURE == BISHOP_PROMOTION_CAPTURE
+        self.0 & FLAG_MASK == BISHOP_PROMOTION_CAPTURE
     }
 
     /// Sets the bitflag of the [`Move`] to [`BISHOP_PROMOTION_CAPTURE`].
@@ -256,7 +238,7 @@ impl Move {
     /// Returns `true` if the [`ROOK_PROMOTION_CAPTURE`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_rook_promotion_capture(&self) -> bool {
-        self.0 & ROOK_PROMOTION_CAPTURE == ROOK_PROMOTION_CAPTURE
+        self.0 & FLAG_MASK == ROOK_PROMOTION_CAPTURE
     }
 
     /// Sets the bitflag of the [`Move`] to [`ROOK_PROMOTION_CAPTURE`].
@@ -268,13 +250,56 @@ impl Move {
     /// Returns `true` if the [`QUEEN_PROMOTION_CAPTURE`] bitflag is set, and `false`
     /// otherwise.
     pub fn is_queen_promotion_capture(&self) -> bool {
-        self.0 & QUEEN_PROMOTION_CAPTURE == QUEEN_PROMOTION_CAPTURE
+        self.0 & FLAG_MASK == QUEEN_PROMOTION_CAPTURE
     }
 
     /// Sets the bitflag of the [`Move`] to [`QUEEN_PROMOTION_CAPTURE`].
     pub fn set_queen_promotion_capture(&mut self) {
         self.0 &= QUIET_MASK;
         self.0 |= QUEEN_PROMOTION_CAPTURE;
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum ParseMoveError {
+    BadInitialSquare,
+    BadTargetSquare,
+    MalformedString,
+}
+
+impl FromStr for Move {
+    type Err = ParseMoveError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.len() != 4 {
+            return Err(ParseMoveError::MalformedString);
+        }
+
+        let (i_square_str, t_square_str) = s.split_at(2);
+
+        let i_square = Square::from_str(i_square_str).ok_or(ParseMoveError::BadInitialSquare)?;
+        let t_square = Square::from_str(t_square_str).ok_or(ParseMoveError::BadTargetSquare)?;
+
+        Ok(Self::unchecked_from_squares(i_square, t_square))
+    }
+}
+
+impl ToString for Move {
+    fn to_string(&self) -> String {
+        let mut out_string = String::with_capacity(5);
+
+        out_string.push_str(&self.initial_square().to_str());
+        out_string.push_str(&self.target_square().to_str());
+
+        match self.0 & FLAG_MASK {
+            QUEEN_PROMOTION | QUEEN_PROMOTION_CAPTURE => out_string.push('q'),
+            KNIGHT_PROMOTION | KNIGHT_PROMOTION_CAPTURE => out_string.push('n'),
+            ROOK_PROMOTION | ROOK_PROMOTION_CAPTURE => out_string.push('r'),
+            BISHOP_PROMOTION | BISHOP_PROMOTION_CAPTURE => out_string.push('b'),
+            _ => (),
+        };
+
+        out_string
     }
 }
 
@@ -336,6 +361,11 @@ impl MoveList {
     /// this sort is unstable.
     pub fn sort(&mut self) {
         self.list[0..self.len].sort_unstable_by_key(|mv| mv.score);
+    }
+
+    /// Sorts the [`MoveScore`] elements in the [`MoveList`] by their [`String`] representation.
+    pub fn sort_alphanumeric(&mut self) {
+        self.list[0..self.len].sort_unstable_by_key(|mv_score| mv_score.mv.to_string());
     }
 
     /// Appends a new [`MoveScore`] to the [`MoveList`].
@@ -432,12 +462,12 @@ mod tests {
 
     #[test]
     fn test_from_squares() {
-        let i_square = 8;
-        let t_square = 24;
+        let i_square = Square::new(8);
+        let t_square = Square::new(24);
 
         assert_eq!(
-            Move::from_squares(i_square, t_square),
-            Some(Move(0b00000010_00011000))
+            Move::unchecked_from_squares(i_square, t_square),
+            Move(0b00000010_00011000)
         );
     }
 }

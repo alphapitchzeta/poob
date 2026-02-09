@@ -1,3 +1,4 @@
+use crate::bitboard_types::*;
 use crate::bitboards::{
     bitboard_constants::{castle_squares::*, rank_file::*},
     *,
@@ -6,7 +7,6 @@ use crate::boardstate::*;
 use crate::movegen::*;
 use crate::moves::*;
 use crate::rende::*;
-use crate::util::*;
 use crate::{Color, Piece};
 
 const PROJECTED_GAME_LENGTH: usize = 40;
@@ -15,7 +15,6 @@ const PROJECTED_GAME_LENGTH: usize = 40;
 #[derive(Debug, Clone)]
 pub struct Game<'a> {
     board_state: BoardState,
-    outcome: Option<Outcome>,
     move_gen: &'a MoveGenerator,
 }
 
@@ -32,7 +31,6 @@ impl<'a> Game<'a> {
         Self {
             board_state: BoardState::default(),
             move_gen,
-            outcome: None,
         }
     }
 
@@ -43,36 +41,7 @@ impl<'a> Game<'a> {
         Ok(Self {
             board_state: BoardState::from_fen(fen)?,
             move_gen,
-            outcome: None,
         })
-    }
-
-    pub fn play_sandbox(&mut self) {
-        let mut history = BoardHistory::new();
-
-        while self.outcome == None {
-            self.print();
-
-            let Some(mv) = read_move() else {
-                continue;
-            };
-
-            history.push(self.board_state.clone());
-
-            self.get_mut_position().move_piece(mv);
-
-            self.board_state.turn_count += 1;
-        }
-
-        let Some(outcome) = self.outcome else {
-            return;
-        };
-
-        match outcome {
-            Outcome::Win(Color::White) => println!("White wins!"),
-            Outcome::Win(Color::Black) => println!("Black wins!"),
-            Outcome::Draw => println!("Draw!"),
-        }
     }
 
     pub fn print(&self) {
@@ -94,13 +63,19 @@ impl Game<'_> {
         self.board_state.to_fen()
     }
 
-    /// Returns a [`u64`] bitboard of all squares being attacked by pieces of a given [color](crate::Color).
+    /// Returns a [`BitBoard`] of all squares being attacked by pieces of a given [color](crate::Color).
     /// This includes squares currently occupied by other friendly pieces.
-    pub fn get_attacks(&self, checked_color: Color) -> u64 {
-        let mut attacks = 0;
+    pub fn get_attacks(&self, checked_color: Color) -> BitBoard {
+        let mut attacks = BitBoard(0);
+
+        let color_board = match checked_color {
+            Color::White => self.board_state.position.white(),
+            Color::Black => self.board_state.position.black(),
+        };
+
         let open_squares = !self.board_state.position.all_boards();
 
-        for square in 0..64 {
+        for square in color_board {
             let piece = match self.board_state.position.piece_at(square) {
                 Some((color, piece)) if color == checked_color => piece,
                 _ => continue,
@@ -121,13 +96,13 @@ impl Game<'_> {
     }
 
     /// Returns `true` if the [white](crate::Color::White) [king](crate::Piece::King) is in check, and `false` otherwise.
-    pub fn is_in_check_white(&self, enemy_attacks: u64) -> bool {
-        self.board_state.position.king_white() & enemy_attacks != 0
+    pub fn is_in_check_white(&self, enemy_attacks: BitBoard) -> bool {
+        !((self.board_state.position.king_white() & enemy_attacks).is_empty())
     }
 
     /// Returns `true` if the [black](crate::Color::Black) [king](crate::Piece::King) is in check, and `false` otherwise.
-    pub fn is_in_check_black(&self, enemy_attacks: u64) -> bool {
-        self.board_state.position.king_black() & enemy_attacks != 0
+    pub fn is_in_check_black(&self, enemy_attacks: BitBoard) -> bool {
+        !((self.board_state.position.king_black() & enemy_attacks).is_empty())
     }
 
     /// Returns `true` if the provided move would put the [white](crate::Color::White) [king](crate::Piece::King) in check,
@@ -155,7 +130,7 @@ impl Game<'_> {
     }
 
     /// Returns `true` if [white](crate::Color::White) can castle kingside, and `false` otherwise.
-    pub fn can_castle_kingside_white(&self, bitboard: u64, enemy_attacks: u64) -> bool {
+    pub fn can_castle_kingside_white(&self, bitboard: BitBoard, enemy_attacks: BitBoard) -> bool {
         if !self.board_state.has_castling_rights_kingside_white() {
             return false;
         }
@@ -164,11 +139,11 @@ impl Game<'_> {
             return false;
         }
 
-        if bitboard & KINGSIDE_WHITE_SQUARES != 0 {
+        if !((bitboard & KINGSIDE_WHITE_SQUARES).is_empty()) {
             return false;
         }
 
-        if enemy_attacks & KINGSIDE_WHITE_SQUARES != 0 {
+        if !((enemy_attacks & KINGSIDE_WHITE_SQUARES).is_empty()) {
             return false;
         }
 
@@ -176,7 +151,7 @@ impl Game<'_> {
     }
 
     /// Returns `true` if [black](crate::Color::Black) can castle kingside, and `false` otherwise.
-    pub fn can_castle_kingside_black(&self, bitboard: u64, enemy_attacks: u64) -> bool {
+    pub fn can_castle_kingside_black(&self, bitboard: BitBoard, enemy_attacks: BitBoard) -> bool {
         if !self.board_state.has_castling_rights_kingside_black() {
             return false;
         }
@@ -185,11 +160,11 @@ impl Game<'_> {
             return false;
         }
 
-        if bitboard & KINGSIDE_BLACK_SQUARES != 0 {
+        if !((bitboard & KINGSIDE_BLACK_SQUARES).is_empty()) {
             return false;
         }
 
-        if enemy_attacks & KINGSIDE_BLACK_SQUARES != 0 {
+        if !((enemy_attacks & KINGSIDE_BLACK_SQUARES).is_empty()) {
             return false;
         }
 
@@ -197,7 +172,7 @@ impl Game<'_> {
     }
 
     /// Returns `true` if [white](crate::Color::White) can castle queenside, and `false` otherwise.
-    pub fn can_castle_queenside_white(&self, bitboard: u64, enemy_attacks: u64) -> bool {
+    pub fn can_castle_queenside_white(&self, bitboard: BitBoard, enemy_attacks: BitBoard) -> bool {
         if !self.board_state.has_castling_rights_queenside_white() {
             return false;
         }
@@ -206,11 +181,11 @@ impl Game<'_> {
             return false;
         }
 
-        if bitboard & (QUEENSIDE_WHITE_SQUARES | QUEENSIDE_ROOK_SQUARE_WHITE) != 0 {
+        if !((bitboard & (QUEENSIDE_WHITE_SQUARES | QUEENSIDE_ROOK_SQUARE_WHITE)).is_empty()) {
             return false;
         }
 
-        if enemy_attacks & QUEENSIDE_WHITE_SQUARES != 0 {
+        if !((enemy_attacks & QUEENSIDE_WHITE_SQUARES).is_empty()) {
             return false;
         }
 
@@ -218,7 +193,7 @@ impl Game<'_> {
     }
 
     /// Returns `true` if [black](crate::Color::Black) can castle queenside, and `false` otherwise.
-    pub fn can_castle_queenside_black(&self, bitboard: u64, enemy_attacks: u64) -> bool {
+    pub fn can_castle_queenside_black(&self, bitboard: BitBoard, enemy_attacks: BitBoard) -> bool {
         if !self.board_state.has_castling_rights_queenside_black() {
             return false;
         }
@@ -227,11 +202,11 @@ impl Game<'_> {
             return false;
         }
 
-        if bitboard & (QUEENSIDE_BLACK_SQUARES | QUEENSIDE_ROOK_SQUARE_BLACK) != 0 {
+        if !((bitboard & (QUEENSIDE_BLACK_SQUARES | QUEENSIDE_ROOK_SQUARE_BLACK)).is_empty()) {
             return false;
         }
 
-        if enemy_attacks & QUEENSIDE_BLACK_SQUARES != 0 {
+        if !((enemy_attacks & QUEENSIDE_BLACK_SQUARES).is_empty()) {
             return false;
         }
 
@@ -247,7 +222,7 @@ impl Game<'_> {
                 let enemy_pieces = self.board_state.position.black();
                 //let enemy_attacks = self.get_attacks(Color::Black);
 
-                for initial_square in 0..64 {
+                for initial_square in friendly_pieces {
                     match self.board_state.position.piece_at(initial_square) {
                         Some((Color::White, Piece::Pawn)) => {
                             self.enumerate_white_pawn_moves(
@@ -295,7 +270,7 @@ impl Game<'_> {
                 let friendly_pieces = self.board_state.position.black();
                 let enemy_pieces = self.board_state.position.white();
 
-                for initial_square in 0..64 {
+                for initial_square in friendly_pieces {
                     match self.board_state.position.piece_at(initial_square) {
                         Some((Color::Black, Piece::Pawn)) => {
                             self.enumerate_black_pawn_moves(
@@ -346,41 +321,43 @@ impl Game<'_> {
 
     pub fn enumerate_white_pawn_moves(
         &self,
-        initial_square: u8,
-        friendly_pieces: u64,
-        enemy_pieces: u64,
+        initial_square: Square,
+        friendly_pieces: BitBoard,
+        enemy_pieces: BitBoard,
         moves: &mut MoveList,
     ) {
         let mut target_squares =
             self.move_gen.get_white_pawn_moves(initial_square) & !(friendly_pieces | enemy_pieces);
 
-        let en_passant_square = BitBoards::unchecked_square_to_bitboard(
-            self.board_state.en_passant_square.unwrap_or(0),
-        );
+        let en_passant_square = self
+            .board_state
+            .en_passant_square
+            .unwrap_or(Square::A1)
+            .to_bitboard();
 
         target_squares |= self.move_gen.get_white_pawn_attacks(initial_square)
             & (enemy_pieces | en_passant_square);
 
-        for target_square in 0..64 {
-            let target_square_bit = 1 << target_square;
-
-            if target_squares & target_square_bit == 0 {
-                continue;
-            };
+        for target_square in target_squares {
+            let target_square_bit = target_square.to_bitboard();
 
             let mut mv = Move::unchecked_from_squares(initial_square, target_square);
 
-            match target_square - initial_square {
-                16 if enemy_pieces & (target_square_bit >> 8) != 0 => continue,
+            match (target_square - initial_square) as u8 {
+                16 if !(((enemy_pieces | friendly_pieces) & (target_square_bit >> 8))
+                    .is_empty()) =>
+                {
+                    continue;
+                }
                 16 => mv.set_double_pawn_push(),
                 _ => (),
             };
 
-            if target_square_bit & enemy_pieces != 0 {
+            if !((target_square_bit & enemy_pieces).is_empty()) {
                 mv.set_capture();
             }
 
-            if target_square_bit & en_passant_square != 0 {
+            if !((target_square_bit & en_passant_square).is_empty()) {
                 mv.set_en_passant_capture();
 
                 if self.would_check_white(mv) {
@@ -391,7 +368,7 @@ impl Game<'_> {
                 continue;
             }
 
-            if target_square_bit & RANK_8 != 0 {
+            if !((target_square_bit & RANK_8).is_empty()) {
                 if self.would_check_white(mv) {
                     continue;
                 }
@@ -424,41 +401,43 @@ impl Game<'_> {
 
     pub fn enumerate_black_pawn_moves(
         &self,
-        initial_square: u8,
-        friendly_pieces: u64,
-        enemy_pieces: u64,
+        initial_square: Square,
+        friendly_pieces: BitBoard,
+        enemy_pieces: BitBoard,
         moves: &mut MoveList,
     ) {
         let mut target_squares =
             self.move_gen.get_black_pawn_moves(initial_square) & !(friendly_pieces | enemy_pieces);
 
-        let en_passant_square = BitBoards::unchecked_square_to_bitboard(
-            self.board_state.en_passant_square.unwrap_or(63),
-        );
+        let en_passant_square = self
+            .board_state
+            .en_passant_square
+            .unwrap_or(Square::H8)
+            .to_bitboard();
 
         target_squares |= self.move_gen.get_black_pawn_attacks(initial_square)
             & (enemy_pieces | en_passant_square);
 
-        for target_square in 0..64 {
-            let target_square_bit = 1 << target_square;
-
-            if target_squares & target_square_bit == 0 {
-                continue;
-            };
+        for target_square in target_squares {
+            let target_square_bit = target_square.to_bitboard();
 
             let mut mv = Move::unchecked_from_squares(initial_square, target_square);
 
-            match initial_square - target_square {
-                16 if enemy_pieces & (target_square_bit << 8) != 0 => continue,
+            match (initial_square - target_square) as u8 {
+                16 if !(((enemy_pieces | friendly_pieces) & (target_square_bit << 8))
+                    .is_empty()) =>
+                {
+                    continue;
+                }
                 16 => mv.set_double_pawn_push(),
                 _ => (),
             };
 
-            if target_square_bit & enemy_pieces != 0 {
+            if !((target_square_bit & enemy_pieces).is_empty()) {
                 mv.set_capture();
             }
 
-            if target_square_bit & en_passant_square != 0 {
+            if !((target_square_bit & en_passant_square).is_empty()) {
                 mv.set_en_passant_capture();
 
                 if self.would_check_black(mv) {
@@ -469,7 +448,7 @@ impl Game<'_> {
                 continue;
             }
 
-            if target_square_bit & RANK_1 != 0 {
+            if !((target_square_bit & RANK_1).is_empty()) {
                 if self.would_check_black(mv) {
                     continue;
                 }
@@ -502,23 +481,19 @@ impl Game<'_> {
 
     pub fn enumerate_white_knight_moves(
         &self,
-        initial_square: u8,
-        friendly_pieces: u64,
-        enemy_pieces: u64,
+        initial_square: Square,
+        friendly_pieces: BitBoard,
+        enemy_pieces: BitBoard,
         moves: &mut MoveList,
     ) {
         let target_squares = self.move_gen.get_knight_attacks(initial_square) & !friendly_pieces;
 
-        for target_square in 0..64 {
-            let target_square_bit = 1 << target_square;
-
-            if target_squares & target_square_bit == 0 {
-                continue;
-            }
+        for target_square in target_squares {
+            let target_square_bit = target_square.to_bitboard();
 
             let mut mv = Move::unchecked_from_squares(initial_square, target_square);
 
-            if target_square_bit & enemy_pieces != 0 {
+            if !((target_square_bit & enemy_pieces).is_empty()) {
                 mv.set_capture();
             }
 
@@ -532,23 +507,19 @@ impl Game<'_> {
 
     pub fn enumerate_black_knight_moves(
         &self,
-        initial_square: u8,
-        friendly_pieces: u64,
-        enemy_pieces: u64,
+        initial_square: Square,
+        friendly_pieces: BitBoard,
+        enemy_pieces: BitBoard,
         moves: &mut MoveList,
     ) {
         let target_squares = self.move_gen.get_knight_attacks(initial_square) & !friendly_pieces;
 
-        for target_square in 0..64 {
-            let target_square_bit = 1 << target_square;
-
-            if target_squares & target_square_bit == 0 {
-                continue;
-            }
+        for target_square in target_squares {
+            let target_square_bit = target_square.to_bitboard();
 
             let mut mv = Move::unchecked_from_squares(initial_square, target_square);
 
-            if target_square_bit & enemy_pieces != 0 {
+            if !((target_square_bit & enemy_pieces).is_empty()) {
                 mv.set_capture();
             }
 
@@ -562,23 +533,19 @@ impl Game<'_> {
 
     pub fn enumerate_white_king_moves(
         &self,
-        initial_square: u8,
-        friendly_pieces: u64,
-        enemy_pieces: u64,
+        initial_square: Square,
+        friendly_pieces: BitBoard,
+        enemy_pieces: BitBoard,
         moves: &mut MoveList,
     ) {
         let target_squares = self.move_gen.get_king_attacks(initial_square) & !friendly_pieces;
 
-        for target_square in 0..64 {
-            let target_square_bit = 1 << target_square;
-
-            if target_squares & target_square_bit == 0 {
-                continue;
-            }
+        for target_square in target_squares {
+            let target_square_bit = target_square.to_bitboard();
 
             let mut mv = Move::unchecked_from_squares(initial_square, target_square);
 
-            if target_square_bit & enemy_pieces != 0 {
+            if !((target_square_bit & enemy_pieces).is_empty()) {
                 mv.set_capture();
             }
 
@@ -592,13 +559,13 @@ impl Game<'_> {
         let enemy_attacks = self.get_attacks(Color::Black);
 
         if self.can_castle_kingside_white(friendly_pieces | enemy_pieces, enemy_attacks) {
-            let mut mv = Move::new();
+            let mut mv = Move::unchecked_from_squares(Square::E1, Square::G1);
             mv.set_kingside_castle();
             moves.push(MoveScore::new(mv));
         }
 
         if self.can_castle_queenside_white(friendly_pieces | enemy_pieces, enemy_attacks) {
-            let mut mv = Move::new();
+            let mut mv = Move::unchecked_from_squares(Square::E1, Square::C1);
             mv.set_queenside_castle();
             moves.push(MoveScore::new(mv));
         }
@@ -606,23 +573,19 @@ impl Game<'_> {
 
     pub fn enumerate_black_king_moves(
         &self,
-        initial_square: u8,
-        friendly_pieces: u64,
-        enemy_pieces: u64,
+        initial_square: Square,
+        friendly_pieces: BitBoard,
+        enemy_pieces: BitBoard,
         moves: &mut MoveList,
     ) {
         let target_squares = self.move_gen.get_king_attacks(initial_square) & !friendly_pieces;
 
-        for target_square in 0..64 {
-            let target_square_bit = 1 << target_square;
-
-            if target_squares & target_square_bit == 0 {
-                continue;
-            }
+        for target_square in target_squares {
+            let target_square_bit = target_square.to_bitboard();
 
             let mut mv = Move::unchecked_from_squares(initial_square, target_square);
 
-            if target_square_bit & enemy_pieces != 0 {
+            if !((target_square_bit & enemy_pieces).is_empty()) {
                 mv.set_capture();
             }
 
@@ -636,13 +599,13 @@ impl Game<'_> {
         let enemy_attacks = self.get_attacks(Color::White);
 
         if self.can_castle_kingside_black(friendly_pieces | enemy_pieces, enemy_attacks) {
-            let mut mv = Move::new();
+            let mut mv = Move::unchecked_from_squares(Square::E8, Square::G8);
             mv.set_kingside_castle();
             moves.push(MoveScore::new(mv));
         }
 
         if self.can_castle_queenside_black(friendly_pieces | enemy_pieces, enemy_attacks) {
-            let mut mv = Move::new();
+            let mut mv = Move::unchecked_from_squares(Square::E8, Square::C8);
             mv.set_queenside_castle();
             moves.push(MoveScore::new(mv));
         }
@@ -650,25 +613,21 @@ impl Game<'_> {
 
     pub fn enumerate_white_rook_moves(
         &self,
-        initial_square: u8,
-        friendly_pieces: u64,
-        enemy_pieces: u64,
+        initial_square: Square,
+        friendly_pieces: BitBoard,
+        enemy_pieces: BitBoard,
         moves: &mut MoveList,
     ) {
         let target_squares =
             MoveGenerator::get_rook_attacks(initial_square, !(friendly_pieces | enemy_pieces))
                 & !friendly_pieces;
 
-        for target_square in 0..64 {
-            let target_square_bit = 1 << target_square;
-
-            if target_squares & target_square_bit == 0 {
-                continue;
-            }
+        for target_square in target_squares {
+            let target_square_bit = target_square.to_bitboard();
 
             let mut mv = Move::unchecked_from_squares(initial_square, target_square);
 
-            if target_square_bit & enemy_pieces != 0 {
+            if !((target_square_bit & enemy_pieces).is_empty()) {
                 mv.set_capture();
             }
 
@@ -682,25 +641,21 @@ impl Game<'_> {
 
     pub fn enumerate_black_rook_moves(
         &self,
-        initial_square: u8,
-        friendly_pieces: u64,
-        enemy_pieces: u64,
+        initial_square: Square,
+        friendly_pieces: BitBoard,
+        enemy_pieces: BitBoard,
         moves: &mut MoveList,
     ) {
         let target_squares =
             MoveGenerator::get_rook_attacks(initial_square, !(friendly_pieces | enemy_pieces))
                 & !friendly_pieces;
 
-        for target_square in 0..64 {
-            let target_square_bit = 1 << target_square;
-
-            if target_squares & target_square_bit == 0 {
-                continue;
-            }
+        for target_square in target_squares {
+            let target_square_bit = target_square.to_bitboard();
 
             let mut mv = Move::unchecked_from_squares(initial_square, target_square);
 
-            if target_square_bit & enemy_pieces != 0 {
+            if !((target_square_bit & enemy_pieces).is_empty()) {
                 mv.set_capture();
             }
 
@@ -714,25 +669,21 @@ impl Game<'_> {
 
     pub fn enumerate_white_bishop_moves(
         &self,
-        initial_square: u8,
-        friendly_pieces: u64,
-        enemy_pieces: u64,
+        initial_square: Square,
+        friendly_pieces: BitBoard,
+        enemy_pieces: BitBoard,
         moves: &mut MoveList,
     ) {
         let target_squares =
             MoveGenerator::get_bishop_attacks(initial_square, !(friendly_pieces | enemy_pieces))
                 & !friendly_pieces;
 
-        for target_square in 0..64 {
-            let target_square_bit = 1 << target_square;
-
-            if target_squares & target_square_bit == 0 {
-                continue;
-            }
+        for target_square in target_squares {
+            let target_square_bit = target_square.to_bitboard();
 
             let mut mv = Move::unchecked_from_squares(initial_square, target_square);
 
-            if target_square_bit & enemy_pieces != 0 {
+            if !((target_square_bit & enemy_pieces).is_empty()) {
                 mv.set_capture();
             }
 
@@ -746,25 +697,21 @@ impl Game<'_> {
 
     pub fn enumerate_black_bishop_moves(
         &self,
-        initial_square: u8,
-        friendly_pieces: u64,
-        enemy_pieces: u64,
+        initial_square: Square,
+        friendly_pieces: BitBoard,
+        enemy_pieces: BitBoard,
         moves: &mut MoveList,
     ) {
         let target_squares =
             MoveGenerator::get_bishop_attacks(initial_square, !(friendly_pieces | enemy_pieces))
                 & !friendly_pieces;
 
-        for target_square in 0..64 {
-            let target_square_bit = 1 << target_square;
-
-            if target_squares & target_square_bit == 0 {
-                continue;
-            }
+        for target_square in target_squares {
+            let target_square_bit = target_square.to_bitboard();
 
             let mut mv = Move::unchecked_from_squares(initial_square, target_square);
 
-            if target_square_bit & enemy_pieces != 0 {
+            if !((target_square_bit & enemy_pieces).is_empty()) {
                 mv.set_capture();
             }
 
@@ -778,9 +725,9 @@ impl Game<'_> {
 
     pub fn enumerate_white_queen_moves(
         &self,
-        initial_square: u8,
-        friendly_pieces: u64,
-        enemy_pieces: u64,
+        initial_square: Square,
+        friendly_pieces: BitBoard,
+        enemy_pieces: BitBoard,
         moves: &mut MoveList,
     ) {
         self.enumerate_white_rook_moves(initial_square, friendly_pieces, enemy_pieces, moves);
@@ -789,9 +736,9 @@ impl Game<'_> {
 
     pub fn enumerate_black_queen_moves(
         &self,
-        initial_square: u8,
-        friendly_pieces: u64,
-        enemy_pieces: u64,
+        initial_square: Square,
+        friendly_pieces: BitBoard,
+        enemy_pieces: BitBoard,
         moves: &mut MoveList,
     ) {
         self.enumerate_black_rook_moves(initial_square, friendly_pieces, enemy_pieces, moves);
@@ -800,6 +747,23 @@ impl Game<'_> {
 
     pub fn unchecked_make_move(&mut self, mv: Move) {
         self.board_state.make_move(mv);
+    }
+
+    pub fn match_move(&self, possible_move: Move) -> Option<Move> {
+        let move_list = self.enumerate_moves();
+        let move_list = MoveListIterator::new(&move_list);
+
+        for valid_move in move_list {
+            if (valid_move.mv.initial_square() != possible_move.initial_square())
+                | (valid_move.mv.target_square() != possible_move.target_square())
+            {
+                continue;
+            }
+
+            return Some(valid_move.mv);
+        }
+
+        None
     }
 }
 
@@ -840,7 +804,7 @@ mod tests {
         let game = Game::new(&move_gen);
         let enemy_attacks = game.get_attacks(game.board_state.side_to_move.enemy());
 
-        assert_eq!(enemy_attacks.count_ones(), 22);
+        assert_eq!(enemy_attacks.popcount(), 22);
     }
 
     // TODO: Add more test cases

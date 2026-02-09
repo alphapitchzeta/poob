@@ -1,11 +1,12 @@
+pub mod bitboard_types;
 pub mod bitboards;
 pub mod boardstate;
+pub mod cli;
 pub mod game;
 pub mod movegen;
 pub mod moves;
-pub mod rende;
-pub mod util;
 pub mod perft;
+pub mod rende;
 
 use crate::bitboards::bitboard_constants::bitboard_indices::*;
 

@@ -1,19 +1,26 @@
 //use poob::bitboards::*;
 //use poob::boardstate::*;
 //use poob::rende::*;
-use poob::game::Game;
+//use poob::game::Game;
 //use poob::moves::*;
+use poob::cli::Session;
 use poob::movegen::*;
 use poob::perft::*;
 
-use std::io::Write;
-use std::{
-    fs::{self, File},
-    io,
-};
+use std::fs::{self, File};
+use std::io::BufRead;
+use std::io::{self, BufReader, Write};
 
 fn main() {
+    let move_gen = MoveGenerator::new();
 
+    let mut session = Session::new(&move_gen);
+
+    session.run();
+
+    //let path = read_perft();
+
+    //perft_suite(&path);
 }
 
 #[allow(dead_code)]
@@ -32,7 +39,7 @@ fn read_perft() -> String {
 
 #[allow(dead_code)]
 fn perft_suite(path: &str) {
-    let test_cases = fs::read_to_string(path).expect("Unable to read file");
+    let test_case_file = fs::File::open(path).expect("Unable to read file");
 
     let mut out_file = File::create_new("perft_results.txt").expect("Unable to create file");
 
@@ -40,10 +47,20 @@ fn perft_suite(path: &str) {
 
     let (mut successes, mut failures) = (0, 0);
 
-    for (i, line) in test_cases.split('\n').enumerate() {
-        let test_case = match PerftCase::from_str(line, &move_gen) {
+    for (i, line) in BufReader::new(test_case_file).lines().enumerate() {
+        let line = match line {
+            Ok(s) => s,
+            Err(_) => break,
+        };
+
+        eprintln!("Line: {line}");
+
+        let test_case = match PerftCase::from_str(line.trim(), &move_gen) {
             Some(case) => case,
-            None => break,
+            None => {
+                eprintln!("Something failed here");
+                break;
+            }
         };
 
         println!("Testing case {}...", i + 1);
