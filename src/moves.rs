@@ -286,10 +286,18 @@ impl FromStr for Move {
 
 impl ToString for Move {
     fn to_string(&self) -> String {
-        let mut out_string = String::with_capacity(4);
+        let mut out_string = String::with_capacity(5);
 
         out_string.push_str(&self.initial_square().to_str());
         out_string.push_str(&self.target_square().to_str());
+
+        match self.0 & FLAG_MASK {
+            QUEEN_PROMOTION | QUEEN_PROMOTION_CAPTURE => out_string.push('q'),
+            KNIGHT_PROMOTION | KNIGHT_PROMOTION_CAPTURE => out_string.push('n'),
+            ROOK_PROMOTION | ROOK_PROMOTION_CAPTURE => out_string.push('r'),
+            BISHOP_PROMOTION | BISHOP_PROMOTION_CAPTURE => out_string.push('b'),
+            _ => (),
+        };
 
         out_string
     }
