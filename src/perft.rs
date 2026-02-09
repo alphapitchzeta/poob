@@ -9,6 +9,11 @@ pub fn perft(depth: usize, game: Game) -> usize {
     }
 
     let moves = game.enumerate_moves();
+
+    if depth == 1 {
+        return moves.len();
+    }
+
     let moves_iter = MoveListIterator::new(&moves);
     let mut nodes = 0;
 
