@@ -94,7 +94,7 @@ pub mod bitboard_constants {
         use super::*;
 
         pub const NOT_KINGSIDE_WHITE_ROOK_START_SQUARE: BitBoard = BitBoard(!0b10000000);
-        pub const NOT_KINGSIDE_BLACK_ROOK_START_SQUARE: BitBoard = BitBoard(!0b10000000 << 56);
+        pub const NOT_KINGSIDE_BLACK_ROOK_START_SQUARE: BitBoard = BitBoard(!(0b10000000 << 56));
         pub const NOT_QUEENSIDE_WHITE_ROOK_START_SQUARE: BitBoard = BitBoard(!1);
         pub const NOT_QUEENSIDE_BLACK_ROOK_START_SQUARE: BitBoard = BitBoard(!(1 << 56));
     }
@@ -454,11 +454,11 @@ impl BitBoards {
     /// Performs a promotion move for [white](Color::White). Removes the [pawn](Piece::Pawn) from the initial square
     /// and places the piece specified in the move in the target square.
     pub fn promote_white(&mut self, mv: Move) {
-        let promote_to = if mv.is_queen_promotion() {
+        let promote_to = if mv.is_queen_promotion() | mv.is_queen_promotion_capture() {
             QUEEN
-        } else if mv.is_knight_promotion() {
+        } else if mv.is_knight_promotion() | mv.is_knight_promotion_capture() {
             KNIGHT
-        } else if mv.is_rook_promotion() {
+        } else if mv.is_rook_promotion() | mv.is_rook_promotion_capture() {
             ROOK
         } else {
             BISHOP
@@ -479,11 +479,11 @@ impl BitBoards {
     /// Performs a promotion move for [black](Color::Black). Removes the [pawn](Piece::Pawn) from the initial square
     /// and places the piece specified in the move in the target square.
     pub fn promote_black(&mut self, mv: Move) {
-        let promote_to = if mv.is_queen_promotion() {
+        let promote_to = if mv.is_queen_promotion() | mv.is_queen_promotion_capture() {
             QUEEN
-        } else if mv.is_knight_promotion() {
+        } else if mv.is_knight_promotion() | mv.is_knight_promotion_capture() {
             KNIGHT
-        } else if mv.is_rook_promotion() {
+        } else if mv.is_rook_promotion() | mv.is_bishop_promotion_capture() {
             ROOK
         } else {
             BISHOP
