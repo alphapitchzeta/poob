@@ -3,6 +3,7 @@ pub mod bitboards;
 pub mod boardstate;
 pub mod cli;
 pub mod game;
+pub mod mailbox;
 pub mod movegen;
 pub mod moves;
 pub mod perft;
