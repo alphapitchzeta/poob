@@ -467,6 +467,8 @@ impl BoardState {
                     self.mailbox.castle_queenside_black();
                 } else if mv.is_en_passant_capture() {
                     self.position.en_passant_black(mv);
+                    self.mailbox.move_piece(mv.initial_square(), mv.target_square());
+                    self.mailbox.clear_square(en_passant_square);
                 } else if mv.is_promotion() {
                     let promote_to = mv.promote_to();
 
