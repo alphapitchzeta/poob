@@ -76,7 +76,7 @@ impl Game<'_> {
         let open_squares = !self.board_state.position.all_boards();
 
         for square in color_board {
-            let piece = match self.board_state.position.piece_at(square) {
+            let piece = match self.board_state.mailbox.piece_at(square) {
                 Some((color, piece)) if color == checked_color => piece,
                 _ => continue,
             };
@@ -220,10 +220,9 @@ impl Game<'_> {
             Color::White => {
                 let friendly_pieces = self.board_state.position.white();
                 let enemy_pieces = self.board_state.position.black();
-                //let enemy_attacks = self.get_attacks(Color::Black);
 
                 for initial_square in friendly_pieces {
-                    match self.board_state.position.piece_at(initial_square) {
+                    match self.board_state.mailbox.piece_at(initial_square) {
                         Some((Color::White, Piece::Pawn)) => {
                             self.enumerate_white_pawn_moves(
                                 initial_square,
@@ -271,7 +270,7 @@ impl Game<'_> {
                 let enemy_pieces = self.board_state.position.white();
 
                 for initial_square in friendly_pieces {
-                    match self.board_state.position.piece_at(initial_square) {
+                    match self.board_state.mailbox.piece_at(initial_square) {
                         Some((Color::Black, Piece::Pawn)) => {
                             self.enumerate_black_pawn_moves(
                                 initial_square,
