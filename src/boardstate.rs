@@ -3,6 +3,7 @@ use crate::bitboards::bitboard_constants::bitboard_indices::*;
 use crate::bitboards::bitboard_constants::rank_file::{FILE_A, FILE_H};
 use crate::bitboards::bitboard_constants::starting_positions::*;
 use crate::bitboards::{BitBoardCreationError, BitBoards};
+use crate::mailbox::Mailbox;
 use crate::moves::*;
 use crate::{Color, Piece};
 
@@ -47,6 +48,7 @@ pub struct BoardState {
     pub en_passant_square: Option<Square>,
     pub fifty_move_rule: u8,
     pub turn_count: u16,
+    pub mailbox: Mailbox,
 }
 
 impl BoardState {
@@ -69,14 +71,19 @@ impl BoardState {
         castling_rights: u8,
         en_passant_square: Option<Square>,
     ) -> Self {
-        Self {
+        let mut boardstate = Self {
             side_to_move,
             position,
             turn_count,
             fifty_move_rule,
             castling_rights,
             en_passant_square,
-        }
+            mailbox: Mailbox::new(),
+        };
+
+        boardstate.populate_mailbox();
+
+        boardstate
     }
 
     pub fn from_fen(fen: &str) -> Result<Self, BoardStateCreationError> {
@@ -316,7 +323,7 @@ impl BoardState {
             for file in 0..8 {
                 let square = rank_square + Square::new(file);
 
-                if let Some((color, piece)) = self.position.piece_at(square) {
+                if let Some((color, piece)) = self.mailbox.piece_at(square) {
                     if empty_squares > 0 {
                         rank.push_str(&empty_squares.to_string());
                         empty_squares = 0;
@@ -349,6 +356,14 @@ impl BoardState {
         }
 
         ranks.join("/")
+    }
+
+    pub fn populate_mailbox(&mut self) {
+        for square in self.position.all_boards() {
+            if let Some(piece) = self.position.piece_at(square) {
+                self.mailbox.set_piece(piece, square);
+            }
+        }
     }
 
     /// Returns an immutable reference to the bitboards of this [`BoardState`].
@@ -405,27 +420,37 @@ impl BoardState {
     /// accordingly.
     pub fn make_move(&mut self, mv: Move) {
         let (moved_color, moved_piece) = self
-            .position
+            .mailbox
             .piece_at(mv.initial_square())
             .unwrap_or((self.side_to_move, Piece::King));
 
-        self.en_passant_square = None;
+        let en_passant_square = self.en_passant_square.take().unwrap_or(Square::A1);
 
         match moved_color {
             Color::White => {
                 if mv.is_kingside_castle() {
                     self.position.castle_kingside_white();
+                    self.mailbox.castle_kingside_white();
                 } else if mv.is_queenside_castle() {
                     self.position.castle_queenside_white();
+                    self.mailbox.castle_queenside_white();
                 } else if mv.is_en_passant_capture() {
                     self.position.en_passant_white(mv);
+                    self.mailbox.move_piece(mv.initial_square(), mv.target_square());
+                    self.mailbox.clear_square(en_passant_square);
                 } else if mv.is_promotion() {
-                    self.position.promote_white(mv);
+                    let promote_to = mv.promote_to();
+
+                    self.position.promote_white(mv, promote_to);
+                    self.mailbox.clear_square(mv.initial_square());
+                    self.mailbox.set_piece((moved_color, promote_to), mv.target_square());
                 } else if mv.is_double_pawn_push() {
                     self.en_passant_square = Some(mv.initial_square() + Square::new(8));
-                    self.position.move_piece(mv);
+                    self.position.move_piece(mv, &self.mailbox);
+                    self.mailbox.move_piece(mv.initial_square(), mv.target_square());
                 } else {
-                    self.position.move_piece(mv);
+                    self.position.move_piece(mv, &self.mailbox);
+                    self.mailbox.move_piece(mv.initial_square(), mv.target_square());
                 }
 
                 if self.position.king_white() != DEFAULT_KING_WHITE {
@@ -436,17 +461,25 @@ impl BoardState {
             Color::Black => {
                 if mv.is_kingside_castle() {
                     self.position.castle_kingside_black();
+                    self.mailbox.castle_kingside_black();
                 } else if mv.is_queenside_castle() {
                     self.position.castle_queenside_black();
+                    self.mailbox.castle_queenside_black();
                 } else if mv.is_en_passant_capture() {
                     self.position.en_passant_black(mv);
                 } else if mv.is_promotion() {
-                    self.position.promote_black(mv);
+                    let promote_to = mv.promote_to();
+
+                    self.position.promote_black(mv, promote_to);
+                    self.mailbox.clear_square(mv.initial_square());
+                    self.mailbox.set_piece((moved_color, promote_to), mv.target_square());
                 } else if mv.is_double_pawn_push() {
                     self.en_passant_square = Some(mv.initial_square() - Square::new(8));
-                    self.position.move_piece(mv);
+                    self.position.move_piece(mv, &self.mailbox);
+                    self.mailbox.move_piece(mv.initial_square(), mv.target_square());
                 } else {
-                    self.position.move_piece(mv);
+                    self.position.move_piece(mv, &self.mailbox);
+                    self.mailbox.move_piece(mv.initial_square(), mv.target_square());
                 }
 
                 if self.position.king_black() != DEFAULT_KING_BLACK {
