@@ -108,7 +108,9 @@ impl BoardState {
         }
 
         let mut ranks = position.split('/').rev();
-        let mut unchecked_bitboards = [[BitBoard(0); 6]; 2];
+        let mut unchecked_bitboard_color = [BitBoard(0); 2];
+        let mut unchecked_bitboard_piece = [BitBoard(0); 6];
+    
         let mut bit = BitBoard(1);
 
         while let Some(rank) = ranks.next() {
@@ -135,18 +137,54 @@ impl BoardState {
                         bit <<= shift;
                         continue;
                     }
-                    'p' => unchecked_bitboards[BLACK][PAWN] |= bit,
-                    'r' => unchecked_bitboards[BLACK][ROOK] |= bit,
-                    'n' => unchecked_bitboards[BLACK][KNIGHT] |= bit,
-                    'b' => unchecked_bitboards[BLACK][BISHOP] |= bit,
-                    'q' => unchecked_bitboards[BLACK][QUEEN] |= bit,
-                    'k' => unchecked_bitboards[BLACK][KING] |= bit,
-                    'P' => unchecked_bitboards[WHITE][PAWN] |= bit,
-                    'R' => unchecked_bitboards[WHITE][ROOK] |= bit,
-                    'N' => unchecked_bitboards[WHITE][KNIGHT] |= bit,
-                    'B' => unchecked_bitboards[WHITE][BISHOP] |= bit,
-                    'Q' => unchecked_bitboards[WHITE][QUEEN] |= bit,
-                    'K' => unchecked_bitboards[WHITE][KING] |= bit,
+                    'p' => {
+                        unchecked_bitboard_color[BLACK] |= bit;
+                        unchecked_bitboard_piece[PAWN] |= bit;
+                    },
+                    'r' => {
+                        unchecked_bitboard_color[BLACK] |= bit;
+                        unchecked_bitboard_piece[ROOK] |= bit;
+                    },
+                    'n' => {
+                        unchecked_bitboard_color[BLACK] |= bit;
+                        unchecked_bitboard_piece[KNIGHT] |= bit;
+                    },
+                    'b' => {
+                        unchecked_bitboard_color[BLACK] |= bit;
+                        unchecked_bitboard_piece[BISHOP] |= bit;
+                    },
+                    'q' => {
+                        unchecked_bitboard_color[BLACK] |= bit;
+                        unchecked_bitboard_piece[QUEEN] |= bit;
+                    },
+                    'k' => {
+                        unchecked_bitboard_color[BLACK] |= bit;
+                        unchecked_bitboard_piece[KING] |= bit;
+                    },
+                    'P' => {
+                        unchecked_bitboard_color[WHITE] |= bit;
+                        unchecked_bitboard_piece[PAWN] |= bit;
+                    },
+                    'R' => {
+                        unchecked_bitboard_color[WHITE] |= bit;
+                        unchecked_bitboard_piece[ROOK] |= bit;
+                    },
+                    'N' => {
+                        unchecked_bitboard_color[WHITE] |= bit;
+                        unchecked_bitboard_piece[KNIGHT] |= bit;
+                    },
+                    'B' => {
+                        unchecked_bitboard_color[WHITE] |= bit;
+                        unchecked_bitboard_piece[BISHOP] |= bit;
+                    },
+                    'Q' => {
+                        unchecked_bitboard_color[WHITE] |= bit;
+                        unchecked_bitboard_piece[QUEEN] |= bit;
+                    },
+                    'K' => {
+                        unchecked_bitboard_color[WHITE] |= bit;
+                        unchecked_bitboard_piece[KING] |= bit;
+                    },
                     _ => {
                         return Err(BoardStateCreationError::BadFenString(
                             FenStringError::BadPosition,
@@ -245,7 +283,7 @@ impl BoardState {
             }
         };
 
-        let position = BitBoards::new(unchecked_bitboards)?;
+        let position = BitBoards::new(unchecked_bitboard_color, unchecked_bitboard_piece)?;
 
         Ok(Self::new(
             side_to_move,
@@ -359,7 +397,7 @@ impl BoardState {
     }
 
     pub fn populate_mailbox(&mut self) {
-        for square in self.position.all_boards() {
+        for square in self.position.full_board() {
             if let Some(piece) = self.position.piece_at(square) {
                 self.mailbox.set_piece(piece, square);
             }
@@ -437,7 +475,7 @@ impl BoardState {
                 } else if mv.is_en_passant_capture() {
                     self.position.en_passant_white(mv);
                     self.mailbox.move_piece(mv.initial_square(), mv.target_square());
-                    self.mailbox.clear_square(en_passant_square);
+                    self.mailbox.clear_square(en_passant_square - Square::new(8));
                 } else if mv.is_promotion() {
                     let promote_to = mv.promote_to();
 
@@ -468,7 +506,7 @@ impl BoardState {
                 } else if mv.is_en_passant_capture() {
                     self.position.en_passant_black(mv);
                     self.mailbox.move_piece(mv.initial_square(), mv.target_square());
-                    self.mailbox.clear_square(en_passant_square);
+                    self.mailbox.clear_square(en_passant_square + Square::new(8));
                 } else if mv.is_promotion() {
                     let promote_to = mv.promote_to();
 
@@ -528,25 +566,37 @@ mod tests {
     fn test_from_fen() {
         let fen = "rnbq1bnr/ppppkppp/8/4p3/4P3/8/PPPPKPPP/RNBQ1BNR w - - 2 5";
 
-        let mut position = [[BitBoard(0); 6]; 2];
+        let (mut color, mut piece) = ([BitBoard(0); 2], [BitBoard(0); 6]);
 
-        position[WHITE][PAWN] = BitBoard(0b00010000_00000000_11101111 << 8);
-        position[WHITE][ROOK] = DEFAULT_ROOKS_WHITE;
-        position[WHITE][KNIGHT] = DEFAULT_KNIGHTS_WHITE;
-        position[WHITE][BISHOP] = DEFAULT_BISHOPS_WHITE;
-        position[WHITE][QUEEN] = DEFAULT_QUEENS_WHITE;
-        position[WHITE][KING] = BitBoard(0b00010000 << 8);
+        color[WHITE] |= BitBoard(0b00010000_00000000_11101111 << 8);
+        piece[PAWN] |= BitBoard(0b00010000_00000000_11101111 << 8);
+        color[WHITE] |= DEFAULT_ROOKS_WHITE;
+        piece[ROOK] |= DEFAULT_ROOKS_WHITE;
+        color[WHITE] |= DEFAULT_KNIGHTS_WHITE;
+        piece[KNIGHT] |= DEFAULT_KNIGHTS_WHITE;
+        color[WHITE] |= DEFAULT_BISHOPS_WHITE;
+        piece[BISHOP] |= DEFAULT_BISHOPS_WHITE;
+        color[WHITE] |= DEFAULT_QUEENS_WHITE;
+        piece[QUEEN] |= DEFAULT_QUEENS_WHITE;
+        color[WHITE] |= BitBoard(0b00010000 << 8);
+        piece[KING] |= BitBoard(0b00010000 << 8);
 
-        position[BLACK][PAWN] = BitBoard(0b11101111_00000000_00010000 << 32);
-        position[BLACK][ROOK] = DEFAULT_ROOKS_BLACK;
-        position[BLACK][KNIGHT] = DEFAULT_KNIGHTS_BLACK;
-        position[BLACK][BISHOP] = DEFAULT_BISHOPS_BLACK;
-        position[BLACK][QUEEN] = DEFAULT_QUEENS_BLACK;
-        position[BLACK][KING] = BitBoard(0b00010000 << 48);
+        color[BLACK] |= BitBoard(0b11101111_00000000_00010000 << 32);
+        piece[PAWN] |= BitBoard(0b11101111_00000000_00010000 << 32);
+        color[BLACK] |= DEFAULT_ROOKS_BLACK;
+        piece[ROOK] |= DEFAULT_ROOKS_BLACK;
+        color[BLACK] |= DEFAULT_KNIGHTS_BLACK;
+        piece[KNIGHT] |= DEFAULT_KNIGHTS_BLACK;
+        color[BLACK] |= DEFAULT_BISHOPS_BLACK;
+        piece[BISHOP] |= DEFAULT_BISHOPS_BLACK;
+        color[BLACK] |= DEFAULT_QUEENS_BLACK;
+        piece[QUEEN] |= DEFAULT_QUEENS_BLACK;
+        color[BLACK] |= BitBoard(0b00010000 << 48);
+        piece[KING] |= BitBoard(0b00010000 << 48);
 
         let board_state = BoardState::new(
             Color::White,
-            BitBoards::new(position).unwrap(),
+            BitBoards::new(color, piece).unwrap(),
             5,
             2,
             0,
