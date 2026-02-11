@@ -3,6 +3,7 @@ use crate::bitboards::bitboard_constants::bitboard_indices::*;
 use crate::bitboards::bitboard_constants::rank_file::{FILE_A, FILE_H};
 use crate::bitboards::bitboard_constants::starting_positions::*;
 use crate::bitboards::{BitBoardCreationError, BitBoards};
+use crate::mailbox::Mailbox;
 use crate::moves::*;
 use crate::{Color, Piece};
 
@@ -47,6 +48,7 @@ pub struct BoardState {
     pub en_passant_square: Option<Square>,
     pub fifty_move_rule: u8,
     pub turn_count: u16,
+    pub mailbox: Mailbox,
 }
 
 impl BoardState {
@@ -69,14 +71,19 @@ impl BoardState {
         castling_rights: u8,
         en_passant_square: Option<Square>,
     ) -> Self {
-        Self {
+        let mut boardstate = Self {
             side_to_move,
             position,
             turn_count,
             fifty_move_rule,
             castling_rights,
             en_passant_square,
-        }
+            mailbox: Mailbox::new(),
+        };
+
+        boardstate.populate_mailbox();
+
+        boardstate
     }
 
     pub fn from_fen(fen: &str) -> Result<Self, BoardStateCreationError> {
@@ -101,7 +108,9 @@ impl BoardState {
         }
 
         let mut ranks = position.split('/').rev();
-        let mut unchecked_bitboards = [[BitBoard(0); 6]; 2];
+        let mut unchecked_bitboard_color = [BitBoard(0); 2];
+        let mut unchecked_bitboard_piece = [BitBoard(0); 6];
+    
         let mut bit = BitBoard(1);
 
         while let Some(rank) = ranks.next() {
@@ -128,18 +137,54 @@ impl BoardState {
                         bit <<= shift;
                         continue;
                     }
-                    'p' => unchecked_bitboards[BLACK][PAWN] |= bit,
-                    'r' => unchecked_bitboards[BLACK][ROOK] |= bit,
-                    'n' => unchecked_bitboards[BLACK][KNIGHT] |= bit,
-                    'b' => unchecked_bitboards[BLACK][BISHOP] |= bit,
-                    'q' => unchecked_bitboards[BLACK][QUEEN] |= bit,
-                    'k' => unchecked_bitboards[BLACK][KING] |= bit,
-                    'P' => unchecked_bitboards[WHITE][PAWN] |= bit,
-                    'R' => unchecked_bitboards[WHITE][ROOK] |= bit,
-                    'N' => unchecked_bitboards[WHITE][KNIGHT] |= bit,
-                    'B' => unchecked_bitboards[WHITE][BISHOP] |= bit,
-                    'Q' => unchecked_bitboards[WHITE][QUEEN] |= bit,
-                    'K' => unchecked_bitboards[WHITE][KING] |= bit,
+                    'p' => {
+                        unchecked_bitboard_color[BLACK] |= bit;
+                        unchecked_bitboard_piece[PAWN] |= bit;
+                    },
+                    'r' => {
+                        unchecked_bitboard_color[BLACK] |= bit;
+                        unchecked_bitboard_piece[ROOK] |= bit;
+                    },
+                    'n' => {
+                        unchecked_bitboard_color[BLACK] |= bit;
+                        unchecked_bitboard_piece[KNIGHT] |= bit;
+                    },
+                    'b' => {
+                        unchecked_bitboard_color[BLACK] |= bit;
+                        unchecked_bitboard_piece[BISHOP] |= bit;
+                    },
+                    'q' => {
+                        unchecked_bitboard_color[BLACK] |= bit;
+                        unchecked_bitboard_piece[QUEEN] |= bit;
+                    },
+                    'k' => {
+                        unchecked_bitboard_color[BLACK] |= bit;
+                        unchecked_bitboard_piece[KING] |= bit;
+                    },
+                    'P' => {
+                        unchecked_bitboard_color[WHITE] |= bit;
+                        unchecked_bitboard_piece[PAWN] |= bit;
+                    },
+                    'R' => {
+                        unchecked_bitboard_color[WHITE] |= bit;
+                        unchecked_bitboard_piece[ROOK] |= bit;
+                    },
+                    'N' => {
+                        unchecked_bitboard_color[WHITE] |= bit;
+                        unchecked_bitboard_piece[KNIGHT] |= bit;
+                    },
+                    'B' => {
+                        unchecked_bitboard_color[WHITE] |= bit;
+                        unchecked_bitboard_piece[BISHOP] |= bit;
+                    },
+                    'Q' => {
+                        unchecked_bitboard_color[WHITE] |= bit;
+                        unchecked_bitboard_piece[QUEEN] |= bit;
+                    },
+                    'K' => {
+                        unchecked_bitboard_color[WHITE] |= bit;
+                        unchecked_bitboard_piece[KING] |= bit;
+                    },
                     _ => {
                         return Err(BoardStateCreationError::BadFenString(
                             FenStringError::BadPosition,
@@ -238,7 +283,7 @@ impl BoardState {
             }
         };
 
-        let position = BitBoards::new(unchecked_bitboards)?;
+        let position = BitBoards::new(unchecked_bitboard_color, unchecked_bitboard_piece)?;
 
         Ok(Self::new(
             side_to_move,
@@ -316,7 +361,7 @@ impl BoardState {
             for file in 0..8 {
                 let square = rank_square + Square::new(file);
 
-                if let Some((color, piece)) = self.position.piece_at(square) {
+                if let Some((color, piece)) = self.mailbox.piece_at(square) {
                     if empty_squares > 0 {
                         rank.push_str(&empty_squares.to_string());
                         empty_squares = 0;
@@ -349,6 +394,14 @@ impl BoardState {
         }
 
         ranks.join("/")
+    }
+
+    pub fn populate_mailbox(&mut self) {
+        for square in self.position.full_board() {
+            if let Some(piece) = self.position.piece_at(square) {
+                self.mailbox.set_piece(piece, square);
+            }
+        }
     }
 
     /// Returns an immutable reference to the bitboards of this [`BoardState`].
@@ -405,27 +458,37 @@ impl BoardState {
     /// accordingly.
     pub fn make_move(&mut self, mv: Move) {
         let (moved_color, moved_piece) = self
-            .position
+            .mailbox
             .piece_at(mv.initial_square())
             .unwrap_or((self.side_to_move, Piece::King));
 
-        self.en_passant_square = None;
+        let en_passant_square = self.en_passant_square.take().unwrap_or(Square::A1);
 
         match moved_color {
             Color::White => {
                 if mv.is_kingside_castle() {
                     self.position.castle_kingside_white();
+                    self.mailbox.castle_kingside_white();
                 } else if mv.is_queenside_castle() {
                     self.position.castle_queenside_white();
+                    self.mailbox.castle_queenside_white();
                 } else if mv.is_en_passant_capture() {
                     self.position.en_passant_white(mv);
+                    self.mailbox.move_piece(mv.initial_square(), mv.target_square());
+                    self.mailbox.clear_square(en_passant_square - Square::new(8));
                 } else if mv.is_promotion() {
-                    self.position.promote_white(mv);
+                    let promote_to = mv.promote_to();
+
+                    self.position.promote_white(mv, promote_to);
+                    self.mailbox.clear_square(mv.initial_square());
+                    self.mailbox.set_piece((moved_color, promote_to), mv.target_square());
                 } else if mv.is_double_pawn_push() {
                     self.en_passant_square = Some(mv.initial_square() + Square::new(8));
-                    self.position.move_piece(mv);
+                    self.position.move_piece(mv, &self.mailbox);
+                    self.mailbox.move_piece(mv.initial_square(), mv.target_square());
                 } else {
-                    self.position.move_piece(mv);
+                    self.position.move_piece(mv, &self.mailbox);
+                    self.mailbox.move_piece(mv.initial_square(), mv.target_square());
                 }
 
                 if self.position.king_white() != DEFAULT_KING_WHITE {
@@ -436,17 +499,27 @@ impl BoardState {
             Color::Black => {
                 if mv.is_kingside_castle() {
                     self.position.castle_kingside_black();
+                    self.mailbox.castle_kingside_black();
                 } else if mv.is_queenside_castle() {
                     self.position.castle_queenside_black();
+                    self.mailbox.castle_queenside_black();
                 } else if mv.is_en_passant_capture() {
                     self.position.en_passant_black(mv);
+                    self.mailbox.move_piece(mv.initial_square(), mv.target_square());
+                    self.mailbox.clear_square(en_passant_square + Square::new(8));
                 } else if mv.is_promotion() {
-                    self.position.promote_black(mv);
+                    let promote_to = mv.promote_to();
+
+                    self.position.promote_black(mv, promote_to);
+                    self.mailbox.clear_square(mv.initial_square());
+                    self.mailbox.set_piece((moved_color, promote_to), mv.target_square());
                 } else if mv.is_double_pawn_push() {
                     self.en_passant_square = Some(mv.initial_square() - Square::new(8));
-                    self.position.move_piece(mv);
+                    self.position.move_piece(mv, &self.mailbox);
+                    self.mailbox.move_piece(mv.initial_square(), mv.target_square());
                 } else {
-                    self.position.move_piece(mv);
+                    self.position.move_piece(mv, &self.mailbox);
+                    self.mailbox.move_piece(mv.initial_square(), mv.target_square());
                 }
 
                 if self.position.king_black() != DEFAULT_KING_BLACK {
@@ -493,25 +566,37 @@ mod tests {
     fn test_from_fen() {
         let fen = "rnbq1bnr/ppppkppp/8/4p3/4P3/8/PPPPKPPP/RNBQ1BNR w - - 2 5";
 
-        let mut position = [[BitBoard(0); 6]; 2];
+        let (mut color, mut piece) = ([BitBoard(0); 2], [BitBoard(0); 6]);
 
-        position[WHITE][PAWN] = BitBoard(0b00010000_00000000_11101111 << 8);
-        position[WHITE][ROOK] = DEFAULT_ROOKS_WHITE;
-        position[WHITE][KNIGHT] = DEFAULT_KNIGHTS_WHITE;
-        position[WHITE][BISHOP] = DEFAULT_BISHOPS_WHITE;
-        position[WHITE][QUEEN] = DEFAULT_QUEENS_WHITE;
-        position[WHITE][KING] = BitBoard(0b00010000 << 8);
+        color[WHITE] |= BitBoard(0b00010000_00000000_11101111 << 8);
+        piece[PAWN] |= BitBoard(0b00010000_00000000_11101111 << 8);
+        color[WHITE] |= DEFAULT_ROOKS_WHITE;
+        piece[ROOK] |= DEFAULT_ROOKS_WHITE;
+        color[WHITE] |= DEFAULT_KNIGHTS_WHITE;
+        piece[KNIGHT] |= DEFAULT_KNIGHTS_WHITE;
+        color[WHITE] |= DEFAULT_BISHOPS_WHITE;
+        piece[BISHOP] |= DEFAULT_BISHOPS_WHITE;
+        color[WHITE] |= DEFAULT_QUEENS_WHITE;
+        piece[QUEEN] |= DEFAULT_QUEENS_WHITE;
+        color[WHITE] |= BitBoard(0b00010000 << 8);
+        piece[KING] |= BitBoard(0b00010000 << 8);
 
-        position[BLACK][PAWN] = BitBoard(0b11101111_00000000_00010000 << 32);
-        position[BLACK][ROOK] = DEFAULT_ROOKS_BLACK;
-        position[BLACK][KNIGHT] = DEFAULT_KNIGHTS_BLACK;
-        position[BLACK][BISHOP] = DEFAULT_BISHOPS_BLACK;
-        position[BLACK][QUEEN] = DEFAULT_QUEENS_BLACK;
-        position[BLACK][KING] = BitBoard(0b00010000 << 48);
+        color[BLACK] |= BitBoard(0b11101111_00000000_00010000 << 32);
+        piece[PAWN] |= BitBoard(0b11101111_00000000_00010000 << 32);
+        color[BLACK] |= DEFAULT_ROOKS_BLACK;
+        piece[ROOK] |= DEFAULT_ROOKS_BLACK;
+        color[BLACK] |= DEFAULT_KNIGHTS_BLACK;
+        piece[KNIGHT] |= DEFAULT_KNIGHTS_BLACK;
+        color[BLACK] |= DEFAULT_BISHOPS_BLACK;
+        piece[BISHOP] |= DEFAULT_BISHOPS_BLACK;
+        color[BLACK] |= DEFAULT_QUEENS_BLACK;
+        piece[QUEEN] |= DEFAULT_QUEENS_BLACK;
+        color[BLACK] |= BitBoard(0b00010000 << 48);
+        piece[KING] |= BitBoard(0b00010000 << 48);
 
         let board_state = BoardState::new(
             Color::White,
-            BitBoards::new(position).unwrap(),
+            BitBoards::new(color, piece).unwrap(),
             5,
             2,
             0,

@@ -30,6 +30,7 @@ use std::str::FromStr;
 
 use crate::bitboard_types::*;
 use move_constants::*;
+use crate::Piece;
 
 /// Struct encapsulating the logic for encoding and decoding moves.
 /// All information is stored in a [`u16`] field.
@@ -257,6 +258,17 @@ impl Move {
     pub fn set_queen_promotion_capture(&mut self) {
         self.0 &= QUIET_MASK;
         self.0 |= QUEEN_PROMOTION_CAPTURE;
+    }
+
+    /// Returns the [`Piece`] being promoted to. Defaults to [`Bishop`](Piece::Bishop).
+    /// Should not be used in non-promotion contexts.
+    pub fn promote_to(&self) -> Piece {
+        match self.0 & FLAG_MASK {
+            QUEEN_PROMOTION | QUEEN_PROMOTION_CAPTURE => Piece::Queen,
+            KNIGHT_PROMOTION | KNIGHT_PROMOTION_CAPTURE => Piece::Knight,
+            ROOK_PROMOTION | ROOK_PROMOTION_CAPTURE => Piece::Rook,
+            _ => Piece::Bishop,
+        }
     }
 }
 
