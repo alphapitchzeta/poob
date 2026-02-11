@@ -8,7 +8,7 @@ pub struct BitBoard(pub u64);
 
 impl BitBoard {
     pub fn contains(self, square: Square) -> bool {
-        self.0 & (1 << square as u8) != 0
+        self.0 & square.to_bitboard().0 != 0
     }
 
     pub fn is_empty(self) -> bool {
@@ -288,7 +288,5 @@ mod tests {
         for (set_bit, square) in test_bitboard.zip((0..SQUARES).step_by(8)) {
             assert_eq!(set_bit, Square::new(square as u8))
         }
-
-        //assert_eq!(test_bitboard, BitBoard(0));
     }
 }
