@@ -73,7 +73,7 @@ impl Game<'_> {
             Color::Black => self.board_state.position.black(),
         };
 
-        let open_squares = !self.board_state.position.all_boards();
+        let open_squares = !self.board_state.position.full_board();
 
         for square in color_board {
             let piece = match self.board_state.mailbox.piece_at(square) {
@@ -836,7 +836,7 @@ mod tests {
             let fen = "rnbq1bnr/pppp1ppp/4k3/8/8/4K3/PPPP1PPP/RNBQ1BNR w - - 0 1";
             let game = Game::from_fen(fen, &move_gen).expect("Invalid FEN");
 
-            let bitboard = game.board_state.position.all_boards();
+            let bitboard = game.board_state.position.full_board();
             let enemy_attacks = game.get_attacks(game.board_state.side_to_move.enemy());
 
             assert_eq!(
@@ -860,7 +860,7 @@ mod tests {
         {
             let game = Game::new(&move_gen);
 
-            let bitboard = game.board_state.position.all_boards();
+            let bitboard = game.board_state.position.full_board();
             let enemy_attacks = game.get_attacks(game.board_state.side_to_move.enemy());
 
             assert_eq!(
@@ -885,7 +885,7 @@ mod tests {
             let fen = "r3k2r/pppq1ppp/2npbn2/1B2p3/1b2P3/2NPBN2/PPPQ1PPP/R3K2R w KQkq - 0 1";
             let game = Game::from_fen(fen, &move_gen).expect("Invalid FEN");
 
-            let bitboard = game.board_state.position.all_boards();
+            let bitboard = game.board_state.position.full_board();
             let enemy_attacks = game.get_attacks(game.board_state.side_to_move.enemy());
             let friendly_attacks = game.get_attacks(game.board_state.side_to_move);
 
