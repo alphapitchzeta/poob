@@ -28,9 +28,9 @@ const MAX_POSSIBLE_MOVES: usize = 218;
 
 use std::str::FromStr;
 
+use crate::Piece;
 use crate::bitboard_types::*;
 use move_constants::*;
-use crate::Piece;
 
 /// Struct encapsulating the logic for encoding and decoding moves.
 /// All information is stored in a [`u16`] field.
@@ -276,6 +276,7 @@ impl Move {
 pub enum ParseMoveError {
     BadInitialSquare,
     BadTargetSquare,
+    BadPromotion,
     MalformedString,
 }
 
@@ -283,16 +284,31 @@ impl FromStr for Move {
     type Err = ParseMoveError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.len() != 4 {
-            return Err(ParseMoveError::MalformedString);
-        }
+        let promotion = match s.len() {
+            4 => None,
+            5 => s.chars().rev().nth(0),
+            _ => return Err(ParseMoveError::MalformedString),
+        };
 
         let (i_square_str, t_square_str) = s.split_at(2);
+
+        let (t_square_str, _) = t_square_str.split_at(2);
 
         let i_square = Square::from_str(i_square_str).ok_or(ParseMoveError::BadInitialSquare)?;
         let t_square = Square::from_str(t_square_str).ok_or(ParseMoveError::BadTargetSquare)?;
 
-        Ok(Self::unchecked_from_squares(i_square, t_square))
+        let mut new_move = Self::unchecked_from_squares(i_square, t_square);
+
+        match promotion {
+            Some('q') => new_move.add_queen_promotion(),
+            Some('n') => new_move.add_knight_promotion(),
+            Some('r') => new_move.add_rook_promotion(),
+            Some('b') => new_move.add_bishop_promotion(),
+            None => (),
+            _ => return Err(ParseMoveError::BadPromotion),
+        };
+
+        Ok(new_move)
     }
 }
 
@@ -481,5 +497,16 @@ mod tests {
             Move::unchecked_from_squares(i_square, t_square),
             Move(0b00000010_00011000)
         );
+    }
+
+    #[test]
+    fn test_to_from_str() {
+        let move_strs = ["e2e4", "g8f6", "h7h8q", "b2b1n", "a7a8r", "f2f1b"];
+
+        for move_str in move_strs {
+            let test_move = move_str.parse::<Move>().unwrap();
+
+            assert_eq!(move_str, test_move.to_string());
+        }
     }
 }
