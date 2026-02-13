@@ -1,4 +1,4 @@
-use std::io::{self, Write};
+use std::io;
 use std::str::FromStr;
 
 use crate::moves::*;
@@ -17,11 +17,37 @@ impl<'a> Session<'a> {
         }
     }
 
-    pub fn set_position(&mut self, position: Position) -> Result<(), BoardStateCreationError> {
-        match position {
-            Position::StartPos => self.game = Game::new(self.move_gen),
-            Position::Fen(s) => self.game = Game::from_fen(&s, self.move_gen)?,
+    pub fn set_position(&mut self, position: Position) -> Result<(), CommandExecutionError> {
+        let (mut new_game, moves) = match position {
+            Position::StartPos(moves_string) => (Game::new(self.move_gen), moves_string),
+            Position::Fen((s, moves_string)) => (
+                Game::from_fen(&s, self.move_gen)
+                    .map_err(|e| CommandExecutionError::BoardStateCreationError(e))?,
+                moves_string,
+            ),
         };
+
+        if let Some(moves_string) = moves {
+            let move_results = moves_string
+                .split_ascii_whitespace()
+                .map(|s| {
+                    s.parse::<Move>()
+                        .map_err(|e| CommandExecutionError::ParseMoveError(e))
+                })
+                .collect::<Vec<_>>();
+
+            for move_result in move_results {
+                let maybe_legal_move = move_result?;
+
+                let legal_move = new_game
+                    .match_move(maybe_legal_move)
+                    .ok_or(CommandExecutionError::IllegalMoveError)?;
+
+                new_game.unchecked_make_move(legal_move);
+            }
+        }
+
+        self.game = new_game;
 
         Ok(())
     }
@@ -33,9 +59,6 @@ impl Session<'_> {
 
         loop {
             buf.clear();
-
-            print!("> ");
-            io::stdout().flush().unwrap();
             io::stdin().read_line(&mut buf).unwrap();
 
             let command = match buf.trim().parse::<Command>() {
@@ -49,7 +72,7 @@ impl Session<'_> {
             match self.execute(command) {
                 Ok(true) => (),
                 Ok(false) => break,
-                Err(e) => println!("Error: {:?}", e),
+                Err(e) => println!("Error: {e:?}"),
             };
         }
     }
@@ -61,17 +84,19 @@ impl Session<'_> {
                 self.game.print();
                 println!("FEN: {}", self.game.to_fen());
             }
-            Command::SetPosition(position) => self
-                .set_position(position)
-                .map_err(|e| CommandExecutionError::BoardStateCreationError(e))?,
+            Command::SetPosition(position) => self.set_position(position)?,
             Command::Move(mv) => {
                 let checked_move = self
                     .game
                     .match_move(mv)
-                    .ok_or(CommandExecutionError::InvalidMoveError)?;
+                    .ok_or(CommandExecutionError::IllegalMoveError)?;
                 self.game.unchecked_make_move(checked_move);
             }
             Command::Perft(depth) => self.perft(depth),
+            Command::Uci => println!("uciok"),
+            Command::IsReady => println!("readyok"),
+            Command::UciNewGame => (),
+            Command::Go(_) => self.go(),
         };
 
         Ok(true)
@@ -97,6 +122,22 @@ impl Session<'_> {
 
         println!("Total nodes: {}", nodes);
     }
+
+    fn go(&self) {
+        let moves = self.game.enumerate_moves();
+
+        if moves.is_empty() {
+            println!("mate");
+            return;
+        }
+
+        let best_move_index = fastrand::usize(0..moves.len());
+
+        println!(
+            "bestmove {}",
+            moves.get_move(best_move_index).unwrap().to_string()
+        );
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -105,6 +146,10 @@ pub enum Command {
     Perft(usize),
     Display,
     Move(Move),
+    Uci,
+    UciNewGame,
+    IsReady,
+    Go(Option<String>),
     Exit,
 }
 
@@ -122,7 +167,8 @@ pub enum ParseCommandError {
 #[derive(Debug, Clone, Copy)]
 pub enum CommandExecutionError {
     BoardStateCreationError(BoardStateCreationError),
-    InvalidMoveError,
+    ParseMoveError(ParseMoveError),
+    IllegalMoveError,
 }
 
 impl FromStr for Command {
@@ -157,6 +203,16 @@ impl FromStr for Command {
                     .parse()
                     .map_err(|e| ParseCommandError::ParseMoveError(e))?,
             )),
+            "uci" => Ok(Command::Uci),
+            "ucinewgame" => Ok(Command::UciNewGame),
+            "isready" => Ok(Command::IsReady),
+            "go" => {
+                let args = chunks.map(|s| s.to_string()).collect::<Vec<_>>().join(" ");
+
+                let real_args = if args.is_empty() { None } else { Some(args) };
+
+                Ok(Command::Go(real_args))
+            }
             _ => Err(ParseCommandError::BadCommand),
         }
     }
@@ -164,8 +220,8 @@ impl FromStr for Command {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Position {
-    StartPos,
-    Fen(String),
+    StartPos(Option<String>),
+    Fen((String, Option<String>)),
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -178,17 +234,31 @@ pub enum ParsePositionError {
 impl FromStr for Position {
     type Err = ParsePositionError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut chunks = s.split_ascii_whitespace();
+    fn from_str(mut s: &str) -> Result<Self, Self::Err> {
+        let mut moves = None;
+        if let Some((fen_s, moves_s)) = s.split_once(" moves ") {
+            s = fen_s;
 
-        match chunks.next().ok_or(ParsePositionError::NoPosition)? {
-            "startpos" | "default" => Ok(Position::StartPos),
-            "fen" => Ok(Position::Fen(
-                chunks
+            moves = Some(
+                moves_s
+                    .split_ascii_whitespace()
+                    .map(|str| str.to_string())
+                    .collect::<Vec<String>>()
+                    .join(" "),
+            );
+        }
+
+        let mut fen_chunks = s.split_ascii_whitespace();
+
+        match fen_chunks.next().ok_or(ParsePositionError::NoPosition)? {
+            "startpos" | "default" => Ok(Position::StartPos(moves)),
+            "fen" => Ok(Position::Fen((
+                fen_chunks
                     .map(|s| s.to_string())
                     .collect::<Vec<String>>()
                     .join(" "),
-            )),
+                moves,
+            ))),
             _ => Err(ParsePositionError::BadPosition),
         }
     }
