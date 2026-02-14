@@ -399,7 +399,7 @@ impl BitBoards {
         self.piece[KING] ^= king_squares;
 
         self.color[WHITE] &= NOT_KINGSIDE_WHITE_ROOK_START_SQUARE;
-        self.piece[ROOK] &= NOT_QUEENSIDE_WHITE_ROOK_START_SQUARE;
+        self.piece[ROOK] &= NOT_KINGSIDE_WHITE_ROOK_START_SQUARE;
 
         self.color[WHITE] |= KINGSIDE_WHITE_ROOK_TARGET_SQUARE;
         self.piece[ROOK] |= KINGSIDE_WHITE_ROOK_TARGET_SQUARE;
@@ -414,7 +414,7 @@ impl BitBoards {
         self.piece[KING] ^= king_squares;
 
         self.color[BLACK] &= NOT_KINGSIDE_BLACK_ROOK_START_SQUARE;
-        self.piece[ROOK] &= NOT_QUEENSIDE_BLACK_ROOK_START_SQUARE;
+        self.piece[ROOK] &= NOT_KINGSIDE_BLACK_ROOK_START_SQUARE;
 
         self.color[BLACK] |= KINGSIDE_BLACK_ROOK_TARGET_SQUARE;
         self.piece[ROOK] |= KINGSIDE_BLACK_ROOK_TARGET_SQUARE;
