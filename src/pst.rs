@@ -180,25 +180,25 @@ impl PieceSquareTables {
             PieceSquareTable::new(MID_GAME_KING_TABLE, END_GAME_KING_TABLE);
 
         for square in 0..64 {
-            let square = square ^ 56; // flip vertical
+            let flip = square ^ 56; // flip vertical
 
-            init_tables.0[WHITE][PAWN].mid_game[square] = MID_GAME_PAWN_TABLE[square];
-            init_tables.0[WHITE][PAWN].end_game[square] = END_GAME_PAWN_TABLE[square];
+            init_tables.0[WHITE][PAWN].mid_game[square] = MID_GAME_PAWN_TABLE[flip];
+            init_tables.0[WHITE][PAWN].end_game[square] = END_GAME_PAWN_TABLE[flip];
 
-            init_tables.0[WHITE][KNIGHT].mid_game[square] = MID_GAME_KNIGHT_TABLE[square];
-            init_tables.0[WHITE][KNIGHT].end_game[square] = END_GAME_KNIGHT_TABLE[square];
+            init_tables.0[WHITE][KNIGHT].mid_game[square] = MID_GAME_KNIGHT_TABLE[flip];
+            init_tables.0[WHITE][KNIGHT].end_game[square] = END_GAME_KNIGHT_TABLE[flip];
 
-            init_tables.0[WHITE][BISHOP].mid_game[square] = MID_GAME_BISHOP_TABLE[square];
-            init_tables.0[WHITE][BISHOP].end_game[square] = END_GAME_BISHOP_TABLE[square];
+            init_tables.0[WHITE][BISHOP].mid_game[square] = MID_GAME_BISHOP_TABLE[flip];
+            init_tables.0[WHITE][BISHOP].end_game[square] = END_GAME_BISHOP_TABLE[flip];
 
-            init_tables.0[WHITE][ROOK].mid_game[square] = MID_GAME_ROOK_TABLE[square];
-            init_tables.0[WHITE][ROOK].end_game[square] = END_GAME_ROOK_TABLE[square];
+            init_tables.0[WHITE][ROOK].mid_game[square] = MID_GAME_ROOK_TABLE[flip];
+            init_tables.0[WHITE][ROOK].end_game[square] = END_GAME_ROOK_TABLE[flip];
 
-            init_tables.0[WHITE][QUEEN].mid_game[square] = MID_GAME_QUEEN_TABLE[square];
-            init_tables.0[WHITE][QUEEN].end_game[square] = END_GAME_QUEEN_TABLE[square];
+            init_tables.0[WHITE][QUEEN].mid_game[square] = MID_GAME_QUEEN_TABLE[flip];
+            init_tables.0[WHITE][QUEEN].end_game[square] = END_GAME_QUEEN_TABLE[flip];
 
-            init_tables.0[WHITE][KING].mid_game[square] = MID_GAME_KING_TABLE[square];
-            init_tables.0[WHITE][KING].end_game[square] = END_GAME_KING_TABLE[square];
+            init_tables.0[WHITE][KING].mid_game[square] = MID_GAME_KING_TABLE[flip];
+            init_tables.0[WHITE][KING].end_game[square] = END_GAME_KING_TABLE[flip];
         }
 
         init_tables
