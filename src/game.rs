@@ -4,6 +4,7 @@ use crate::bitboards::{
     *,
 };
 use crate::boardstate::*;
+use crate::mailbox::Mailbox;
 use crate::movegen::*;
 use crate::moves::*;
 use crate::rende::*;
@@ -13,9 +14,8 @@ const PROJECTED_GAME_LENGTH: usize = 40;
 
 /// Struct encapsulating the game logic.
 #[derive(Debug, Clone)]
-pub struct Game<'a> {
+pub struct Game {
     board_state: BoardState,
-    move_gen: &'a MoveGenerator,
 }
 
 /// Represents the possible outcomes of a [`Game`].
@@ -26,21 +26,16 @@ pub enum Outcome {
     Draw,
 }
 
-impl<'a> Game<'a> {
-    pub fn new(move_gen: &'a MoveGenerator) -> Self {
+impl Game {
+    pub fn new() -> Self {
         Self {
             board_state: BoardState::default(),
-            move_gen,
         }
     }
 
-    pub fn from_fen(
-        fen: &str,
-        move_gen: &'a MoveGenerator,
-    ) -> Result<Self, BoardStateCreationError> {
+    pub fn from_fen(fen: &str) -> Result<Self, BoardStateCreationError> {
         Ok(Self {
             board_state: BoardState::from_fen(fen)?,
-            move_gen,
         })
     }
 
@@ -53,12 +48,14 @@ impl<'a> Game<'a> {
         &self.board_state.position
     }
 
+    pub fn get_mailbox(&self) -> &Mailbox {
+        &self.board_state.mailbox
+    }
+
     pub fn get_mut_position(&mut self) -> &mut BitBoards {
         &mut self.board_state.position
     }
-}
 
-impl Game<'_> {
     pub fn to_fen(&self) -> String {
         self.board_state.to_fen()
     }
@@ -82,10 +79,10 @@ impl Game<'_> {
             };
 
             attacks |= match (checked_color, piece) {
-                (Color::Black, Piece::Pawn) => self.move_gen.get_black_pawn_attacks(square),
-                (Color::White, Piece::Pawn) => self.move_gen.get_white_pawn_attacks(square),
-                (_, Piece::Knight) => self.move_gen.get_knight_attacks(square),
-                (_, Piece::King) => self.move_gen.get_king_attacks(square),
+                (Color::Black, Piece::Pawn) => MOVE_GEN.get_black_pawn_attacks(square),
+                (Color::White, Piece::Pawn) => MOVE_GEN.get_white_pawn_attacks(square),
+                (_, Piece::Knight) => MOVE_GEN.get_knight_attacks(square),
+                (_, Piece::King) => MOVE_GEN.get_king_attacks(square),
                 (_, Piece::Rook) => MoveGenerator::get_rook_attacks(square, open_squares),
                 (_, Piece::Bishop) => MoveGenerator::get_bishop_attacks(square, open_squares),
                 (_, Piece::Queen) => MoveGenerator::get_queen_attacks(square, open_squares),
@@ -326,7 +323,7 @@ impl Game<'_> {
         moves: &mut MoveList,
     ) {
         let mut target_squares =
-            self.move_gen.get_white_pawn_moves(initial_square) & !(friendly_pieces | enemy_pieces);
+            MOVE_GEN.get_white_pawn_moves(initial_square) & !(friendly_pieces | enemy_pieces);
 
         let en_passant_square = self
             .board_state
@@ -334,8 +331,8 @@ impl Game<'_> {
             .unwrap_or(Square::A1)
             .to_bitboard();
 
-        target_squares |= self.move_gen.get_white_pawn_attacks(initial_square)
-            & (enemy_pieces | en_passant_square);
+        target_squares |=
+            MOVE_GEN.get_white_pawn_attacks(initial_square) & (enemy_pieces | en_passant_square);
 
         for target_square in target_squares {
             let target_square_bit = target_square.to_bitboard();
@@ -406,7 +403,7 @@ impl Game<'_> {
         moves: &mut MoveList,
     ) {
         let mut target_squares =
-            self.move_gen.get_black_pawn_moves(initial_square) & !(friendly_pieces | enemy_pieces);
+            MOVE_GEN.get_black_pawn_moves(initial_square) & !(friendly_pieces | enemy_pieces);
 
         let en_passant_square = self
             .board_state
@@ -414,8 +411,8 @@ impl Game<'_> {
             .unwrap_or(Square::H8)
             .to_bitboard();
 
-        target_squares |= self.move_gen.get_black_pawn_attacks(initial_square)
-            & (enemy_pieces | en_passant_square);
+        target_squares |=
+            MOVE_GEN.get_black_pawn_attacks(initial_square) & (enemy_pieces | en_passant_square);
 
         for target_square in target_squares {
             let target_square_bit = target_square.to_bitboard();
@@ -485,7 +482,7 @@ impl Game<'_> {
         enemy_pieces: BitBoard,
         moves: &mut MoveList,
     ) {
-        let target_squares = self.move_gen.get_knight_attacks(initial_square) & !friendly_pieces;
+        let target_squares = MOVE_GEN.get_knight_attacks(initial_square) & !friendly_pieces;
 
         for target_square in target_squares {
             let target_square_bit = target_square.to_bitboard();
@@ -511,7 +508,7 @@ impl Game<'_> {
         enemy_pieces: BitBoard,
         moves: &mut MoveList,
     ) {
-        let target_squares = self.move_gen.get_knight_attacks(initial_square) & !friendly_pieces;
+        let target_squares = MOVE_GEN.get_knight_attacks(initial_square) & !friendly_pieces;
 
         for target_square in target_squares {
             let target_square_bit = target_square.to_bitboard();
@@ -537,7 +534,7 @@ impl Game<'_> {
         enemy_pieces: BitBoard,
         moves: &mut MoveList,
     ) {
-        let target_squares = self.move_gen.get_king_attacks(initial_square) & !friendly_pieces;
+        let target_squares = MOVE_GEN.get_king_attacks(initial_square) & !friendly_pieces;
 
         for target_square in target_squares {
             let target_square_bit = target_square.to_bitboard();
@@ -577,7 +574,7 @@ impl Game<'_> {
         enemy_pieces: BitBoard,
         moves: &mut MoveList,
     ) {
-        let target_squares = self.move_gen.get_king_attacks(initial_square) & !friendly_pieces;
+        let target_squares = MOVE_GEN.get_king_attacks(initial_square) & !friendly_pieces;
 
         for target_square in target_squares {
             let target_square_bit = target_square.to_bitboard();
@@ -761,6 +758,10 @@ impl Game<'_> {
 
         None
     }
+
+    pub fn side_to_move(&self) -> Color {
+        self.board_state.side_to_move
+    }
 }
 
 #[derive(Debug)]
@@ -796,8 +797,7 @@ mod tests {
 
     #[test]
     fn test_get_enemy_attacks() {
-        let move_gen = MoveGenerator::new();
-        let game = Game::new(&move_gen);
+        let game = Game::new();
         let enemy_attacks = game.get_attacks(game.board_state.side_to_move.enemy());
 
         assert_eq!(enemy_attacks.popcount(), 22);
@@ -806,10 +806,8 @@ mod tests {
     // TODO: Add more test cases
     #[test]
     fn test_is_in_check() {
-        let move_gen = MoveGenerator::new();
-
         {
-            let game = Game::new(&move_gen);
+            let game = Game::new();
             let enemy_attacks = game.get_attacks(game.board_state.side_to_move.enemy());
 
             assert_eq!(game.is_in_check_white(enemy_attacks), false);
@@ -817,7 +815,7 @@ mod tests {
 
         {
             let fen = "rnbqkbnr/pppp1ppp/8/8/8/8/PPPPQPPP/RNB1KBNR b KQkq - 0 1";
-            let game = Game::from_fen(fen, &move_gen).expect("Invalid FEN");
+            let game = Game::from_fen(fen).expect("Invalid FEN");
             let enemy_attacks = game.get_attacks(game.board_state.side_to_move.enemy());
 
             assert_eq!(game.is_in_check_black(enemy_attacks), true);
@@ -827,11 +825,9 @@ mod tests {
     // TODO: Add more test cases
     #[test]
     fn test_can_castle() {
-        let move_gen = MoveGenerator::new();
-
         {
             let fen = "rnbq1bnr/pppp1ppp/4k3/8/8/4K3/PPPP1PPP/RNBQ1BNR w - - 0 1";
-            let game = Game::from_fen(fen, &move_gen).expect("Invalid FEN");
+            let game = Game::from_fen(fen).expect("Invalid FEN");
 
             let bitboard = game.board_state.position.full_board();
             let enemy_attacks = game.get_attacks(game.board_state.side_to_move.enemy());
@@ -855,7 +851,7 @@ mod tests {
         }
 
         {
-            let game = Game::new(&move_gen);
+            let game = Game::new();
 
             let bitboard = game.board_state.position.full_board();
             let enemy_attacks = game.get_attacks(game.board_state.side_to_move.enemy());
@@ -880,7 +876,7 @@ mod tests {
 
         {
             let fen = "r3k2r/pppq1ppp/2npbn2/1B2p3/1b2P3/2NPBN2/PPPQ1PPP/R3K2R w KQkq - 0 1";
-            let game = Game::from_fen(fen, &move_gen).expect("Invalid FEN");
+            let game = Game::from_fen(fen).expect("Invalid FEN");
 
             let bitboard = game.board_state.position.full_board();
             let enemy_attacks = game.get_attacks(game.board_state.side_to_move.enemy());
