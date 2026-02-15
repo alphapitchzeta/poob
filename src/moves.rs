@@ -28,6 +28,7 @@ const MAX_POSSIBLE_MOVES: usize = 218;
 
 use std::ops::{AddAssign, SubAssign};
 use std::str::FromStr;
+use std::slice;
 
 use crate::Piece;
 use crate::bitboard_types::*;
@@ -428,14 +429,22 @@ impl MoveList {
         Some(popped)
     }
 
-    /// Returns a `Some(MoveScore)` of the [`MoveScore`] entry at the
-    /// corresponding index, or [`None`] if the index is out of bounds.
-    pub fn get(&self, index: usize) -> Option<MoveScore> {
+    /// Returns an optional immutable reference to the [`MoveScore`] entry
+    /// at the corresponding index, or [`None`] if the index is out of bounds.
+    pub fn get(&self, index: usize) -> Option<&MoveScore> {
         if index >= self.len {
             return None;
         }
 
-        Some(self.list[index])
+        Some(&self.list[index])
+    }
+
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut MoveScore> {
+        if index >= self.len {
+            return None;
+        }
+
+        Some(&mut self.list[index])
     }
 
     /// Returns a `Some(Move)` of the [`MoveScore`] entry at the
@@ -486,14 +495,33 @@ impl<'a> MoveListIterator<'a> {
     }
 }
 
-impl Iterator for MoveListIterator<'_> {
-    type Item = MoveScore;
+impl<'a> Iterator for MoveListIterator<'a> {
+    type Item = &'a MoveScore;
 
     fn next(&mut self) -> Option<Self::Item> {
         let item = self.move_list.get(self.position);
         self.position += 1;
 
         item
+    }
+}
+pub struct MoveListIteratorMut<'a> {
+    iter: slice::IterMut<'a, MoveScore>,
+}
+
+impl<'a> MoveListIteratorMut<'a> {
+    pub fn new(move_list: &'a mut MoveList) -> Self {
+        Self {
+            iter: move_list.list[..move_list.len].iter_mut()
+        }
+    }
+}
+
+impl<'a> Iterator for MoveListIteratorMut<'a> {
+    type Item = &'a mut MoveScore;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
     }
 }
 
