@@ -315,7 +315,7 @@ impl BitBoards {
     }
 
     /// Returns the total piece count.
-    pub fn total_pieces(&self) -> u8 {
+    pub fn total_pieces(&self) -> i32 {
         self.full_board().popcount()
     }
 
