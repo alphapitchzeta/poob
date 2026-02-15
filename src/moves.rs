@@ -26,6 +26,7 @@ pub mod move_constants {
 /// The maximum possible moves from any given chess position.
 const MAX_POSSIBLE_MOVES: usize = 218;
 
+use std::ops::{AddAssign, SubAssign};
 use std::str::FromStr;
 
 use crate::Piece;
@@ -335,7 +336,7 @@ impl ToString for Move {
 #[derive(Debug, Clone, Copy)]
 pub struct MoveScore {
     pub mv: Move,
-    pub score: i32,
+    score: i32,
 }
 
 impl MoveScore {
@@ -352,6 +353,22 @@ impl MoveScore {
 
     pub fn with_score(mv: Move, score: i32) -> Self {
         Self { mv, score }
+    }
+
+    pub fn set_score(&mut self, score: i32) {
+        self.score = score;
+    }
+}
+
+impl AddAssign<i32> for MoveScore {
+    fn add_assign(&mut self, rhs: i32) {
+        self.score += rhs;
+    }
+}
+
+impl SubAssign<i32> for MoveScore {
+    fn sub_assign(&mut self, rhs: i32) {
+        self.score -= rhs;
     }
 }
 
@@ -385,10 +402,10 @@ impl MoveList {
         self.len == 0
     }
 
-    /// Sorts the [`MoveScore`] elements in the [`MoveList`] by their scores. Currently,
-    /// this sort is unstable.
+    /// Sorts the [`MoveScore`] elements in the [`MoveList`] by their scores
+    /// in descending order. Currently, this sort is unstable.
     pub fn sort(&mut self) {
-        self.list[0..self.len].sort_unstable_by_key(|mv| mv.score);
+        self.list[0..self.len].sort_unstable_by(|mv_a, mv_b| mv_b.score.cmp(&mv_a.score));
     }
 
     /// Sorts the [`MoveScore`] elements in the [`MoveList`] by their [`String`] representation.
@@ -431,14 +448,10 @@ impl MoveList {
 
     /// Calls [`sort()`](Self::sort()) on the [`MoveList`] and returns the [`MoveScore`]
     /// entry with the highest score.
-    ///
-    /// # Panics
-    /// Currently directly indexes the underlying array. The index will
-    /// be out of bounds if the current length is `0`.
     pub fn get_best(&mut self) -> MoveScore {
         self.sort();
 
-        self.list[self.len - 1]
+        self.list[0]
     }
 
     /// Calls [`sort()`](Self::sort()) on the [`MoveList`] and returns the [`Move`] of the
