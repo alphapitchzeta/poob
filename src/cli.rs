@@ -2,26 +2,24 @@ use std::io;
 use std::str::FromStr;
 
 use crate::moves::*;
-use crate::{boardstate::*, game::*, movegen::MoveGenerator, perft::*};
+use crate::{boardstate::*, game::*, perft::*};
 
-pub struct Session<'a> {
-    game: Game<'a>,
-    move_gen: &'a MoveGenerator,
+pub const ID: &str = "Poob 0.1.0 by alphapitchzeta";
+
+pub struct Session {
+    game: Game,
 }
 
-impl<'a> Session<'a> {
-    pub fn new(move_gen: &'a MoveGenerator) -> Self {
-        Self {
-            game: Game::new(move_gen),
-            move_gen,
-        }
+impl Session {
+    pub fn new() -> Self {
+        Self { game: Game::new() }
     }
 
     pub fn set_position(&mut self, position: Position) -> Result<(), CommandExecutionError> {
         let (mut new_game, moves) = match position {
-            Position::StartPos(moves_string) => (Game::new(self.move_gen), moves_string),
+            Position::StartPos(moves_string) => (Game::new(), moves_string),
             Position::Fen((s, moves_string)) => (
-                Game::from_fen(&s, self.move_gen)
+                Game::from_fen(&s)
                     .map_err(|e| CommandExecutionError::BoardStateCreationError(e))?,
                 moves_string,
             ),
@@ -53,7 +51,7 @@ impl<'a> Session<'a> {
     }
 }
 
-impl Session<'_> {
+impl Session {
     pub fn run(&mut self) {
         let mut buf = String::new();
 
@@ -93,7 +91,10 @@ impl Session<'_> {
                 self.game.unchecked_make_move(checked_move);
             }
             Command::Perft(depth) => self.perft(depth),
-            Command::Uci => println!("uciok"),
+            Command::Uci => {
+                println!("{ID}");
+                println!("uciok")
+            }
             Command::IsReady => println!("readyok"),
             Command::UciNewGame => (),
             Command::Go(_) => self.go(),
@@ -124,6 +125,13 @@ impl Session<'_> {
     }
 
     fn go(&self) {
+        let best_move = self.game.search();
+
+        println!("bestmove {}", best_move.to_string());
+    }
+
+    #[allow(dead_code)]
+    fn go_rand(&self) {
         let moves = self.game.enumerate_moves();
 
         if moves.is_empty() {
