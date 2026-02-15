@@ -142,7 +142,10 @@ pub struct BitBoards {
 impl BitBoards {
     /// Returns a collection of bitboards in the default starting position.
     pub fn default() -> Self {
-        let mut boards = Self { color: [BitBoard(0); 2], piece: [BitBoard(0); 6] };
+        let mut boards = Self {
+            color: [BitBoard(0); 2],
+            piece: [BitBoard(0); 6],
+        };
 
         boards.piece[PAWN] |= DEFAULT_PAWNS_WHITE;
         boards.color[WHITE] |= DEFAULT_PAWNS_WHITE;
@@ -184,7 +187,9 @@ impl BitBoards {
     }
 
     pub fn new(color: [BitBoard; 2], piece: [BitBoard; 6]) -> Result<Self, BitBoardCreationError> {
-        if (color[WHITE] & piece[KING]).popcount() != 1 || (color[BLACK] & piece[KING]).popcount() != 1 {
+        if (color[WHITE] & piece[KING]).popcount() != 1
+            || (color[BLACK] & piece[KING]).popcount() != 1
+        {
             return Err(BitBoardCreationError::BadKingCount);
         }
 
@@ -394,7 +399,7 @@ impl BitBoards {
         self.piece[KING] ^= king_squares;
 
         self.color[WHITE] &= NOT_KINGSIDE_WHITE_ROOK_START_SQUARE;
-        self.piece[ROOK] &= NOT_QUEENSIDE_WHITE_ROOK_START_SQUARE;
+        self.piece[ROOK] &= NOT_KINGSIDE_WHITE_ROOK_START_SQUARE;
 
         self.color[WHITE] |= KINGSIDE_WHITE_ROOK_TARGET_SQUARE;
         self.piece[ROOK] |= KINGSIDE_WHITE_ROOK_TARGET_SQUARE;
@@ -409,7 +414,7 @@ impl BitBoards {
         self.piece[KING] ^= king_squares;
 
         self.color[BLACK] &= NOT_KINGSIDE_BLACK_ROOK_START_SQUARE;
-        self.piece[ROOK] &= NOT_QUEENSIDE_BLACK_ROOK_START_SQUARE;
+        self.piece[ROOK] &= NOT_KINGSIDE_BLACK_ROOK_START_SQUARE;
 
         self.color[BLACK] |= KINGSIDE_BLACK_ROOK_TARGET_SQUARE;
         self.piece[ROOK] |= KINGSIDE_BLACK_ROOK_TARGET_SQUARE;
@@ -488,7 +493,7 @@ impl BitBoards {
 
         self.color[WHITE] ^= initial_bitboard;
         self.piece[PAWN] ^= initial_bitboard;
-        
+
         self.color[WHITE] ^= target_bitboard;
         self.piece[promote_to.to_index()] ^= target_bitboard;
     }
@@ -506,7 +511,7 @@ impl BitBoards {
 
         self.color[BLACK] ^= initial_bitboard;
         self.piece[PAWN] ^= initial_bitboard;
-        
+
         self.color[BLACK] ^= target_bitboard;
         self.piece[promote_to.to_index()] ^= target_bitboard;
     }

@@ -110,7 +110,7 @@ impl BoardState {
         let mut ranks = position.split('/').rev();
         let mut unchecked_bitboard_color = [BitBoard(0); 2];
         let mut unchecked_bitboard_piece = [BitBoard(0); 6];
-    
+
         let mut bit = BitBoard(1);
 
         while let Some(rank) = ranks.next() {
@@ -140,51 +140,51 @@ impl BoardState {
                     'p' => {
                         unchecked_bitboard_color[BLACK] |= bit;
                         unchecked_bitboard_piece[PAWN] |= bit;
-                    },
+                    }
                     'r' => {
                         unchecked_bitboard_color[BLACK] |= bit;
                         unchecked_bitboard_piece[ROOK] |= bit;
-                    },
+                    }
                     'n' => {
                         unchecked_bitboard_color[BLACK] |= bit;
                         unchecked_bitboard_piece[KNIGHT] |= bit;
-                    },
+                    }
                     'b' => {
                         unchecked_bitboard_color[BLACK] |= bit;
                         unchecked_bitboard_piece[BISHOP] |= bit;
-                    },
+                    }
                     'q' => {
                         unchecked_bitboard_color[BLACK] |= bit;
                         unchecked_bitboard_piece[QUEEN] |= bit;
-                    },
+                    }
                     'k' => {
                         unchecked_bitboard_color[BLACK] |= bit;
                         unchecked_bitboard_piece[KING] |= bit;
-                    },
+                    }
                     'P' => {
                         unchecked_bitboard_color[WHITE] |= bit;
                         unchecked_bitboard_piece[PAWN] |= bit;
-                    },
+                    }
                     'R' => {
                         unchecked_bitboard_color[WHITE] |= bit;
                         unchecked_bitboard_piece[ROOK] |= bit;
-                    },
+                    }
                     'N' => {
                         unchecked_bitboard_color[WHITE] |= bit;
                         unchecked_bitboard_piece[KNIGHT] |= bit;
-                    },
+                    }
                     'B' => {
                         unchecked_bitboard_color[WHITE] |= bit;
                         unchecked_bitboard_piece[BISHOP] |= bit;
-                    },
+                    }
                     'Q' => {
                         unchecked_bitboard_color[WHITE] |= bit;
                         unchecked_bitboard_piece[QUEEN] |= bit;
-                    },
+                    }
                     'K' => {
                         unchecked_bitboard_color[WHITE] |= bit;
                         unchecked_bitboard_piece[KING] |= bit;
-                    },
+                    }
                     _ => {
                         return Err(BoardStateCreationError::BadFenString(
                             FenStringError::BadPosition,
@@ -474,21 +474,26 @@ impl BoardState {
                     self.mailbox.castle_queenside_white();
                 } else if mv.is_en_passant_capture() {
                     self.position.en_passant_white(mv);
-                    self.mailbox.move_piece(mv.initial_square(), mv.target_square());
-                    self.mailbox.clear_square(en_passant_square - Square::new(8));
+                    self.mailbox
+                        .move_piece(mv.initial_square(), mv.target_square());
+                    self.mailbox
+                        .clear_square(en_passant_square - Square::new(8));
                 } else if mv.is_promotion() {
                     let promote_to = mv.promote_to();
 
                     self.position.promote_white(mv, promote_to);
                     self.mailbox.clear_square(mv.initial_square());
-                    self.mailbox.set_piece((moved_color, promote_to), mv.target_square());
+                    self.mailbox
+                        .set_piece((moved_color, promote_to), mv.target_square());
                 } else if mv.is_double_pawn_push() {
                     self.en_passant_square = Some(mv.initial_square() + Square::new(8));
                     self.position.move_piece(mv, &self.mailbox);
-                    self.mailbox.move_piece(mv.initial_square(), mv.target_square());
+                    self.mailbox
+                        .move_piece(mv.initial_square(), mv.target_square());
                 } else {
                     self.position.move_piece(mv, &self.mailbox);
-                    self.mailbox.move_piece(mv.initial_square(), mv.target_square());
+                    self.mailbox
+                        .move_piece(mv.initial_square(), mv.target_square());
                 }
 
                 if self.position.king_white() != DEFAULT_KING_WHITE {
@@ -505,21 +510,26 @@ impl BoardState {
                     self.mailbox.castle_queenside_black();
                 } else if mv.is_en_passant_capture() {
                     self.position.en_passant_black(mv);
-                    self.mailbox.move_piece(mv.initial_square(), mv.target_square());
-                    self.mailbox.clear_square(en_passant_square + Square::new(8));
+                    self.mailbox
+                        .move_piece(mv.initial_square(), mv.target_square());
+                    self.mailbox
+                        .clear_square(en_passant_square + Square::new(8));
                 } else if mv.is_promotion() {
                     let promote_to = mv.promote_to();
 
                     self.position.promote_black(mv, promote_to);
                     self.mailbox.clear_square(mv.initial_square());
-                    self.mailbox.set_piece((moved_color, promote_to), mv.target_square());
+                    self.mailbox
+                        .set_piece((moved_color, promote_to), mv.target_square());
                 } else if mv.is_double_pawn_push() {
                     self.en_passant_square = Some(mv.initial_square() - Square::new(8));
                     self.position.move_piece(mv, &self.mailbox);
-                    self.mailbox.move_piece(mv.initial_square(), mv.target_square());
+                    self.mailbox
+                        .move_piece(mv.initial_square(), mv.target_square());
                 } else {
                     self.position.move_piece(mv, &self.mailbox);
-                    self.mailbox.move_piece(mv.initial_square(), mv.target_square());
+                    self.mailbox
+                        .move_piece(mv.initial_square(), mv.target_square());
                 }
 
                 if self.position.king_black() != DEFAULT_KING_BLACK {

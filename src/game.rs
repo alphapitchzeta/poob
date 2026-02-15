@@ -749,17 +749,14 @@ impl Game<'_> {
     }
 
     pub fn match_move(&self, possible_move: Move) -> Option<Move> {
+        let possible_move_string = possible_move.to_string();
         let move_list = self.enumerate_moves();
         let move_list = MoveListIterator::new(&move_list);
 
         for valid_move in move_list {
-            if (valid_move.mv.initial_square() != possible_move.initial_square())
-                | (valid_move.mv.target_square() != possible_move.target_square())
-            {
-                continue;
+            if possible_move_string == valid_move.mv.to_string() {
+                return Some(valid_move.mv);
             }
-
-            return Some(valid_move.mv);
         }
 
         None

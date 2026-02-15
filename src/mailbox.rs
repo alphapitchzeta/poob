@@ -1,5 +1,5 @@
-use crate::{Color, Piece};
 use crate::bitboard_types::Square;
+use crate::{Color, Piece};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct MailboxPiece {
@@ -39,7 +39,7 @@ impl Mailbox {
         self.0[square as usize] != None
     }
 
-    pub fn move_piece(&mut self, i_square:Square, t_square:Square) {
+    pub fn move_piece(&mut self, i_square: Square, t_square: Square) {
         self.0[t_square as usize] = self.0[i_square as usize];
         self.0[i_square as usize] = None;
     }
