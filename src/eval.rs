@@ -60,9 +60,8 @@ impl Game {
     pub fn get_ordered_moves(&self) -> MoveList {
         let mut move_list = self.enumerate_moves();
         let mailbox = self.get_mailbox();
-        let move_list_iter = MoveListIterator::new(&move_list);
 
-        for mut move_score in move_list_iter {
+        for move_score in MoveListIteratorMut::new(&mut move_list) {
             let target_square = move_score.mv.target_square();
 
             let (color, piece) = mailbox
@@ -70,7 +69,7 @@ impl Game {
                 .unwrap_or((self.side_to_move(), Piece::Pawn));
 
             // Give the move a bonus or penalty based on the score from the corresponding piece-square table
-            move_score +=
+            *move_score +=
                 PIECE_SQUARE_TABLES.score_tapered(target_square, color, piece, self.phase());
 
             if move_score.mv.is_capture() {
@@ -79,7 +78,7 @@ impl Game {
                     .unwrap_or((self.side_to_move().enemy(), Piece::Pawn));
 
                 // Add the difference between the captured piece's value and the moved piece's value
-                move_score += captured_piece.value() - piece.value();
+                *move_score += captured_piece.value() - piece.value();
             }
         }
 
