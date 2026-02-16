@@ -10,8 +10,8 @@ impl Game {
             let mut next_turn = self.clone();
             next_turn.unchecked_make_move(move_score.mv);
 
-            *move_score += next_turn.negamax(DEFAULT_DEPTH);
-            //*move_score += next_turn.alpha_beta(MIN_SCORE, MAX_SCORE, DEFAULT_DEPTH);
+            //*move_score += next_turn.negamax(DEFAULT_DEPTH);
+            *move_score += next_turn.alpha_beta(MIN_SCORE, MAX_SCORE, DEFAULT_DEPTH);
         }
 
         move_list.get_best_move()
@@ -52,7 +52,7 @@ impl Game {
             let mut next_turn = self.clone();
             next_turn.unchecked_make_move(move_score.mv);
 
-            let score = next_turn.alpha_beta(alpha * -1, beta * -1, depth - 1) * -1;
+            let score = next_turn.alpha_beta(beta * -1, alpha * -1, depth - 1) * -1;
 
             if score > best_score {
                 best_score = score;
