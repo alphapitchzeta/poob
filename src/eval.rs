@@ -25,7 +25,7 @@ impl Game {
         sum += (eval_color_pieces & position.bishops()).popcount() * BISHOP_VALUE;
         sum += (eval_color_pieces & position.rooks()).popcount() * ROOK_VALUE;
         sum += (eval_color_pieces & position.queens()).popcount() * QUEEN_VALUE;
-        sum += (eval_color_pieces & position.kings()).popcount() * KING_VALUE; // May be redundant
+        //sum += (eval_color_pieces & position.kings()).popcount() * KING_VALUE; // May be redundant
 
         sum
     }
