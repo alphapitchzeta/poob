@@ -550,4 +550,16 @@ mod tests {
             assert_eq!(move_str, test_move.to_string());
         }
     }
+
+    #[test]
+    fn test_is_capture() {
+        let mut test_move = Move::new();
+        assert!(!test_move.is_capture());
+
+        test_move.set_capture();
+        assert!(test_move.is_capture());
+
+        test_move.set_queen_promotion_capture();
+        assert!(test_move.is_capture());
+    }
 }
