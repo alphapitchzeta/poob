@@ -4,7 +4,6 @@
 //use poob::game::Game;
 //use poob::moves::*;
 use poob::cli::Session;
-use poob::movegen::*;
 use poob::perft::*;
 
 use std::fs::{self, File};
@@ -12,9 +11,7 @@ use std::io::BufRead;
 use std::io::{self, BufReader, Write};
 
 fn main() {
-    let move_gen = MoveGenerator::new();
-
-    let mut session = Session::new(&move_gen);
+    let mut session = Session::new();
 
     session.run();
 
@@ -43,8 +40,6 @@ fn perft_suite(path: &str) {
 
     let mut out_file = File::create_new("perft_results.txt").expect("Unable to create file");
 
-    let move_gen = MoveGenerator::new();
-
     let (mut successes, mut failures) = (0, 0);
 
     for (i, line) in BufReader::new(test_case_file).lines().enumerate() {
@@ -53,9 +48,9 @@ fn perft_suite(path: &str) {
             Err(_) => break,
         };
 
-        eprintln!("Line: {line}");
+        //eprintln!("Line: {line}");
 
-        let test_case = match PerftCase::from_str(line.trim(), &move_gen) {
+        let test_case = match PerftCase::from_str(line.trim()) {
             Some(case) => case,
             None => {
                 eprintln!("Something failed here");

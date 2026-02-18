@@ -15,8 +15,8 @@ impl BitBoard {
         self.0.count_ones() == 0
     }
 
-    pub fn popcount(self) -> u8 {
-        self.0.count_ones() as u8
+    pub fn popcount(self) -> i32 {
+        self.0.count_ones() as i32
     }
 
     pub fn lsb(self) -> Square {
@@ -183,6 +183,10 @@ impl Square {
         BitBoard(1 << self as u8)
     }
 
+    pub fn flip_vertical(self) -> Self {
+        self ^ 56
+    }
+
     pub fn from_str(s: &str) -> Option<Self> {
         let mut chars = s.chars();
 
@@ -288,5 +292,15 @@ mod tests {
         for (set_bit, square) in test_bitboard.zip((0..SQUARES).step_by(8)) {
             assert_eq!(set_bit, Square::new(square as u8))
         }
+    }
+
+    #[test]
+    fn test_flip_vertical() {
+        let mut square = Square::A1;
+        assert_eq!(square.flip_vertical(), Square::A8);
+
+        square = square.flip_vertical();
+
+        assert_eq!(square.flip_vertical(), Square::A1);
     }
 }

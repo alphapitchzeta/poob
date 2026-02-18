@@ -2,14 +2,18 @@ pub mod bitboard_types;
 pub mod bitboards;
 pub mod boardstate;
 pub mod cli;
+pub mod eval;
 pub mod game;
 pub mod mailbox;
 pub mod movegen;
 pub mod moves;
 pub mod perft;
+pub mod pst;
 pub mod rende;
+pub mod search;
 
 use crate::bitboards::bitboard_constants::bitboard_indices::*;
+use crate::eval::material_values::*;
 
 /// Represents one of the two playable colors (white or black).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -59,6 +63,17 @@ impl Piece {
             Piece::Bishop => BISHOP,
             Piece::Queen => QUEEN,
             Piece::King => KING,
+        }
+    }
+
+    pub fn value(&self) -> i32 {
+        match self {
+            Piece::Pawn => PAWN_VALUE,
+            Piece::Knight => KNIGHT_VALUE,
+            Piece::Bishop => BISHOP_VALUE,
+            Piece::Rook => ROOK_VALUE,
+            Piece::Queen => QUEEN_VALUE,
+            Piece::King => KING_VALUE,
         }
     }
 }

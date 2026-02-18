@@ -26,6 +26,8 @@ pub mod move_constants {
 /// The maximum possible moves from any given chess position.
 const MAX_POSSIBLE_MOVES: usize = 218;
 
+use std::ops::{AddAssign, SubAssign};
+use std::slice;
 use std::str::FromStr;
 
 use crate::Piece;
@@ -335,7 +337,7 @@ impl ToString for Move {
 #[derive(Debug, Clone, Copy)]
 pub struct MoveScore {
     pub mv: Move,
-    pub score: i32,
+    score: i32,
 }
 
 impl MoveScore {
@@ -352,6 +354,22 @@ impl MoveScore {
 
     pub fn with_score(mv: Move, score: i32) -> Self {
         Self { mv, score }
+    }
+
+    pub fn set_score(&mut self, score: i32) {
+        self.score = score;
+    }
+}
+
+impl AddAssign<i32> for MoveScore {
+    fn add_assign(&mut self, rhs: i32) {
+        self.score += rhs;
+    }
+}
+
+impl SubAssign<i32> for MoveScore {
+    fn sub_assign(&mut self, rhs: i32) {
+        self.score -= rhs;
     }
 }
 
@@ -385,10 +403,10 @@ impl MoveList {
         self.len == 0
     }
 
-    /// Sorts the [`MoveScore`] elements in the [`MoveList`] by their scores. Currently,
-    /// this sort is unstable.
+    /// Sorts the [`MoveScore`] elements in the [`MoveList`] by their scores
+    /// in descending order. Currently, this sort is unstable.
     pub fn sort(&mut self) {
-        self.list[0..self.len].sort_unstable_by_key(|mv| mv.score);
+        self.list[0..self.len].sort_unstable_by(|mv_a, mv_b| mv_b.score.cmp(&mv_a.score));
     }
 
     /// Sorts the [`MoveScore`] elements in the [`MoveList`] by their [`String`] representation.
@@ -411,14 +429,22 @@ impl MoveList {
         Some(popped)
     }
 
-    /// Returns a `Some(MoveScore)` of the [`MoveScore`] entry at the
-    /// corresponding index, or [`None`] if the index is out of bounds.
-    pub fn get(&self, index: usize) -> Option<MoveScore> {
+    /// Returns an optional immutable reference to the [`MoveScore`] entry
+    /// at the corresponding index, or [`None`] if the index is out of bounds.
+    pub fn get(&self, index: usize) -> Option<&MoveScore> {
         if index >= self.len {
             return None;
         }
 
-        Some(self.list[index])
+        Some(&self.list[index])
+    }
+
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut MoveScore> {
+        if index >= self.len {
+            return None;
+        }
+
+        Some(&mut self.list[index])
     }
 
     /// Returns a `Some(Move)` of the [`MoveScore`] entry at the
@@ -431,14 +457,10 @@ impl MoveList {
 
     /// Calls [`sort()`](Self::sort()) on the [`MoveList`] and returns the [`MoveScore`]
     /// entry with the highest score.
-    ///
-    /// # Panics
-    /// Currently directly indexes the underlying array. The index will
-    /// be out of bounds if the current length is `0`.
     pub fn get_best(&mut self) -> MoveScore {
         self.sort();
 
-        self.list[self.len - 1]
+        self.list[0]
     }
 
     /// Calls [`sort()`](Self::sort()) on the [`MoveList`] and returns the [`Move`] of the
@@ -473,14 +495,33 @@ impl<'a> MoveListIterator<'a> {
     }
 }
 
-impl Iterator for MoveListIterator<'_> {
-    type Item = MoveScore;
+impl<'a> Iterator for MoveListIterator<'a> {
+    type Item = &'a MoveScore;
 
     fn next(&mut self) -> Option<Self::Item> {
         let item = self.move_list.get(self.position);
         self.position += 1;
 
         item
+    }
+}
+pub struct MoveListIteratorMut<'a> {
+    iter: slice::IterMut<'a, MoveScore>,
+}
+
+impl<'a> MoveListIteratorMut<'a> {
+    pub fn new(move_list: &'a mut MoveList) -> Self {
+        Self {
+            iter: move_list.list[..move_list.len].iter_mut(),
+        }
+    }
+}
+
+impl<'a> Iterator for MoveListIteratorMut<'a> {
+    type Item = &'a mut MoveScore;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter.next()
     }
 }
 
@@ -508,5 +549,17 @@ mod tests {
 
             assert_eq!(move_str, test_move.to_string());
         }
+    }
+
+    #[test]
+    fn test_is_capture() {
+        let mut test_move = Move::new();
+        assert!(!test_move.is_capture());
+
+        test_move.set_capture();
+        assert!(test_move.is_capture());
+
+        test_move.set_queen_promotion_capture();
+        assert!(test_move.is_capture());
     }
 }

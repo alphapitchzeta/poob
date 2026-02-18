@@ -296,9 +296,6 @@ impl BoardState {
     }
 
     /// Returns a FEN string of this [`BoardState`].
-    /// # Panics
-    /// Currently calls [`expect()`](std::option::Option::expect) on [`index_to_square_str()`]. This should not fail,
-    /// as the [`BoardState`] representation should always be valid.
     pub fn to_fen(&self) -> String {
         let mut fen: Vec<String> = Vec::with_capacity(6);
 

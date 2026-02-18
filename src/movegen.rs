@@ -1,6 +1,10 @@
 use crate::bitboard_types::*;
 use crate::bitboards::bitboard_constants::rank_file::*;
 
+use std::sync::LazyLock;
+
+pub static MOVE_GEN: LazyLock<MoveGenerator> = LazyLock::new(|| MoveGenerator::new());
+
 /// Constants used in move generation.
 pub mod movegen_constants {
     use super::*;

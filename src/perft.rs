@@ -1,5 +1,4 @@
 use crate::game::Game;
-use crate::movegen::*;
 use crate::moves::*;
 use std::time::Instant;
 
@@ -28,13 +27,13 @@ pub fn perft(depth: usize, game: Game) -> usize {
     nodes
 }
 
-pub struct PerftCase<'a> {
-    game: Game<'a>,
+pub struct PerftCase {
+    game: Game,
     case: Vec<DepthNode>,
 }
 
-impl<'a> PerftCase<'a> {
-    pub fn from_str(s: &str, move_gen: &'a MoveGenerator) -> Option<Self> {
+impl PerftCase {
+    pub fn from_str(s: &str) -> Option<Self> {
         let mut chunks = s.split(';');
         let fen = chunks.next()?;
         let mut depth_nodes = Vec::new();
@@ -43,7 +42,7 @@ impl<'a> PerftCase<'a> {
             depth_nodes.push(DepthNode::from_str(chunk)?);
         }
 
-        let game = Game::from_fen(fen, move_gen).ok()?;
+        let game = Game::from_fen(fen).ok()?;
 
         Some(Self {
             game,
@@ -52,7 +51,7 @@ impl<'a> PerftCase<'a> {
     }
 }
 
-impl PerftCase<'_> {
+impl PerftCase {
     pub fn test(&self) -> (String, bool) {
         let mut result_string = format!("Testing position {}\n\n", self.game.to_fen());
         let mut success = true;
