@@ -125,7 +125,7 @@ impl Session {
     }
 
     fn go(&self) {
-        let best_move = self.game.search();
+        let best_move = self.game.search_id();
 
         println!("bestmove {}", best_move.to_string());
     }
