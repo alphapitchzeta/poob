@@ -27,8 +27,8 @@ pub mod move_constants {
 const MAX_POSSIBLE_MOVES: usize = 218;
 
 use std::ops::{AddAssign, SubAssign};
-use std::str::FromStr;
 use std::slice;
+use std::str::FromStr;
 
 use crate::Piece;
 use crate::bitboard_types::*;
@@ -512,7 +512,7 @@ pub struct MoveListIteratorMut<'a> {
 impl<'a> MoveListIteratorMut<'a> {
     pub fn new(move_list: &'a mut MoveList) -> Self {
         Self {
-            iter: move_list.list[..move_list.len].iter_mut()
+            iter: move_list.list[..move_list.len].iter_mut(),
         }
     }
 }
