@@ -87,8 +87,50 @@ impl Game {
         move_list
     }
 
+    pub fn eval_net_squares(&self) -> i32 {
+        self.eval_squares(self.side_to_move()) - self.eval_squares(self.side_to_move().enemy())
+    }
+
+    pub fn eval_squares(&self, eval_color: Color) -> i32 {
+        let phase = self.phase();
+        let position = self.get_position();
+
+        let eval_color_pieces = match eval_color {
+            Color::White => position.white(),
+            Color::Black => position.black(),
+        };
+
+        let mut sum = 0;
+
+        for square in eval_color_pieces & position.pawns() {
+            sum += PIECE_SQUARE_TABLES.score_tapered(square, eval_color, Piece::Pawn, phase);
+        }
+
+        for square in eval_color_pieces & position.knights() {
+            sum += PIECE_SQUARE_TABLES.score_tapered(square, eval_color, Piece::Knight, phase);
+        }
+
+        for square in eval_color_pieces & position.bishops() {
+            sum += PIECE_SQUARE_TABLES.score_tapered(square, eval_color, Piece::Bishop, phase);
+        }
+
+        for square in eval_color_pieces & position.rooks() {
+            sum += PIECE_SQUARE_TABLES.score_tapered(square, eval_color, Piece::Rook, phase);
+        }
+
+        for square in eval_color_pieces & position.queens() {
+            sum += PIECE_SQUARE_TABLES.score_tapered(square, eval_color, Piece::Queen, phase);
+        }
+
+        for square in eval_color_pieces & position.kings() {
+            sum += PIECE_SQUARE_TABLES.score_tapered(square, eval_color, Piece::King, phase);
+        }
+
+        sum
+    }
+
     pub fn evaluate_position(&self) -> i32 {
-        self.eval_net_material()
+        self.eval_net_material() + self.eval_net_squares()
     }
 }
 
