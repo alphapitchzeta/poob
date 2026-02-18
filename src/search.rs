@@ -1,4 +1,4 @@
-use crate::{eval::scores::*, game::Game, moves::*, pst::PIECE_SQUARE_TABLES, Piece};
+use crate::{Piece, eval::scores::*, game::Game, moves::*, pst::PIECE_SQUARE_TABLES};
 
 const DEFAULT_DEPTH: usize = 6;
 
@@ -7,19 +7,50 @@ impl Game {
         let mut move_list = self.get_ordered_moves();
 
         let mailbox = self.get_mailbox();
+        let phase = self.phase();
 
         for move_score in MoveListIteratorMut::new(&mut move_list) {
-            let (color, piece) = mailbox.piece_at(move_score.mv.initial_square()).unwrap_or((self.side_to_move(), Piece::Pawn));
-            
+            let (color, piece) = mailbox
+                .piece_at(move_score.mv.initial_square())
+                .unwrap_or((self.side_to_move(), Piece::Pawn));
+
             let mut next_turn = self.clone();
             next_turn.unchecked_make_move(move_score.mv);
 
             //*move_score += next_turn.negamax(DEFAULT_DEPTH);
-            move_score.set_score(next_turn.alpha_beta(MIN_SCORE, MAX_SCORE, DEFAULT_DEPTH) * -1);
-            *move_score += PIECE_SQUARE_TABLES.score_tapered(move_score.mv.target_square(), color, piece, self.phase());
+            move_score.set_score(-next_turn.alpha_beta(MIN_SCORE, MAX_SCORE, DEFAULT_DEPTH));
+            *move_score += PIECE_SQUARE_TABLES.score_tapered(
+                move_score.mv.target_square(),
+                color,
+                piece,
+                phase,
+            );
         }
 
         move_list.get_best_move()
+    }
+
+    pub fn search_id(&self) -> Move {
+        let mut move_list = self.get_ordered_moves();
+
+        let mailbox = self.get_mailbox();
+        let phase = self.phase();
+
+        for depth in (2..=DEFAULT_DEPTH).step_by(2) {
+            for move_score in MoveListIteratorMut::new(&mut move_list) {
+                let (color, piece) = mailbox.piece_at(move_score.mv.initial_square()).unwrap_or((self.side_to_move(), Piece::Pawn));
+
+                let mut next_turn = self.clone();
+                next_turn.unchecked_make_move(move_score.mv);
+
+                move_score.set_score(-next_turn.alpha_beta(MIN_SCORE, MAX_SCORE, depth));
+                *move_score += PIECE_SQUARE_TABLES.score_tapered(move_score.mv.target_square(), color, piece, phase);
+            }
+
+            move_list.sort();
+        }
+
+        move_list.get(0).unwrap().mv
     }
 
     pub fn negamax(&self, depth: usize) -> i32 {
@@ -35,7 +66,7 @@ impl Game {
             let mut next_turn = self.clone();
             next_turn.unchecked_make_move(move_score.mv);
 
-            let score = next_turn.negamax(depth - 1) * -1;
+            let score = -next_turn.negamax(depth - 1);
 
             if score > max {
                 max = score;
@@ -58,7 +89,7 @@ impl Game {
             let mut next_turn = self.clone();
             next_turn.unchecked_make_move(move_score.mv);
 
-            let score = next_turn.alpha_beta(beta * -1, alpha * -1, depth - 1) * -1;
+            let score = -next_turn.alpha_beta(-beta, -alpha, depth - 1);
 
             if score > best_score {
                 best_score = score;
@@ -98,7 +129,7 @@ impl Game {
             let mut next_turn = self.clone();
             next_turn.unchecked_make_move(move_score.mv);
 
-            let score = next_turn.quiescence_search(beta * -1, alpha * -1) * -1;
+            let score = -next_turn.quiescence_search(-beta, -alpha);
 
             if score >= beta {
                 return score;
