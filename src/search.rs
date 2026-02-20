@@ -31,10 +31,10 @@ impl Game {
                 };
 
                 move_score.set_score(score);
+            }
 
-                if aborted {
-                    break;
-                }
+            if aborted {
+                break;
             }
 
             move_list.sort();
