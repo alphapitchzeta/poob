@@ -33,11 +33,11 @@ impl Game {
                 move_score.set_score(score);
             }
 
+            move_list.sort();
+
             if aborted {
                 break;
             }
-
-            move_list.sort();
         }
 
         move_list.get(0).unwrap().mv
