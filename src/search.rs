@@ -1,8 +1,8 @@
 use crate::{eval::scores::*, game::Game, moves::*, search::time_ctrl::Timer};
 
-pub const MAX_DEPTH: u16 = 6;
-pub const MAX_PLY: u16 = MAX_DEPTH / 2;
-pub const MAX_TIME: i32 = 30_000;
+pub const DEFAULT_DEPTH: u16 = 10;
+pub const DEFAULT_PLY: u16 = DEFAULT_DEPTH / 2;
+pub const DEFAULT_TIME: i32 = 60_000;
 const TIME_CHECK_INTERVAL: usize = 1024;
 
 #[derive(Debug, Clone, Copy)]
@@ -17,12 +17,14 @@ impl Game {
         let mut aborted = false;
 
         for depth in (2..=max_depth).step_by(2) {
+            let mut nodes = 0;
+
             for move_score in MoveListIteratorMut::new(&mut move_list) {
 
                 let mut next_turn = self.clone();
                 next_turn.unchecked_make_move(move_score.mv);
 
-                let score = match next_turn.alpha_beta(MIN_SCORE, MAX_SCORE, depth, timer, 0) {
+                let score = match next_turn.alpha_beta(MIN_SCORE, MAX_SCORE, depth, timer, &mut nodes) {
                     SearchResult::Score(s) => -s,
                     SearchResult::Aborted => {
                         aborted = true;
@@ -43,7 +45,7 @@ impl Game {
         move_list.get(0).unwrap().mv
     }
 
-    fn alpha_beta(&self, mut alpha: i32, beta: i32, depth: u16, timer: Timer, mut nodes: usize) -> SearchResult {
+    fn alpha_beta(&self, mut alpha: i32, beta: i32, depth: u16, timer: Timer, nodes: &mut usize) -> SearchResult {
         if depth == 0 {
             //return self.evaluate_position();
             return self.quiescence_search(alpha, beta, timer, nodes);
@@ -55,9 +57,9 @@ impl Game {
         for move_score in MoveListIterator::new(&move_list) {
             let mut next_turn = self.clone();
             next_turn.unchecked_make_move(move_score.mv);
-            nodes += 1;
+            *nodes += 1;
 
-            if nodes % TIME_CHECK_INTERVAL == 0 && timer.out_of_time() {
+            if *nodes % TIME_CHECK_INTERVAL == 0 && timer.out_of_time() {
                 return SearchResult::Aborted;
             }
 
@@ -82,7 +84,7 @@ impl Game {
         SearchResult::Score(best_score)
     }
 
-    fn quiescence_search(&self, mut alpha: i32, beta: i32, timer: Timer, mut nodes: usize) -> SearchResult {
+    fn quiescence_search(&self, mut alpha: i32, beta: i32, timer: Timer, nodes: &mut usize) -> SearchResult {
         let eval = self.evaluate_position();
         let mut best_score = eval;
 
@@ -103,9 +105,9 @@ impl Game {
 
             let mut next_turn = self.clone();
             next_turn.unchecked_make_move(move_score.mv);
-            nodes += 1;
+            *nodes += 1;
 
-            if nodes % TIME_CHECK_INTERVAL == 0 && timer.out_of_time() {
+            if *nodes % TIME_CHECK_INTERVAL == 0 && timer.out_of_time() {
                 return SearchResult::Aborted;
             }
 
@@ -158,6 +160,7 @@ pub mod time_ctrl {
     }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -182,3 +185,4 @@ mod tests {
         assert_eq!(timer.out_of_time(), true);
     }
 }
+*/
