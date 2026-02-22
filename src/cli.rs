@@ -2,7 +2,7 @@ use std::io;
 use std::time::Instant;
 use std::str::{FromStr, SplitAsciiWhitespace};
 
-use crate::search::{MAX_PLY, MAX_TIME, time_ctrl::Timer};
+use crate::search::{DEFAULT_PLY, DEFAULT_TIME, time_ctrl::Timer};
 use crate::{Color, boardstate::*, game::*, moves::*, perft::*};
 
 pub const ID: &str = "Poob 0.1.0 by alphapitchzeta";
@@ -134,7 +134,7 @@ impl Session {
         let search_time = match clock_set {
             Some(clock) => clock / 20 + increment_set.unwrap_or(0) / 2,
             None => go_command.move_time,
-        }.clamp(0, go_command.move_time);
+        };
 
         let search_timer = Timer::new(search_time, Instant::now());
 
@@ -353,8 +353,8 @@ fn parse_helper<I: FromStr>(iter: &mut SplitAsciiWhitespace) -> Result<I, ParseG
 impl GoCommand {
     pub fn default() -> Self {
         Self {
-            move_time: MAX_TIME,
-            max_ply: MAX_PLY,
+            move_time: DEFAULT_TIME,
+            max_ply: DEFAULT_PLY,
             white_time: None,
             black_time: None,
             white_increment: None,
