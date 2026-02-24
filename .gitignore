@@ -1,2 +1,19 @@
+# Rust build artifacts
 target/
-Cargo.lock
+**/*.rlib
+**/*.rmeta
+
+# Binaries / executables
+*.exe
+*.dll
+*.pdb
+
+# IDE / editor files
+.vscode/
+.idea/
+*.code-workspace
+
+# OS-specific junk
+.DS_Store
+Thumbs.db
+desktop.ini

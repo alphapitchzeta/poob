@@ -1,6 +1,6 @@
 use crate::{eval::scores::*, game::Game, moves::*/*, pst::PIECE_SQUARE_TABLES*/};
 
-const DEFAULT_DEPTH: usize = 6;
+const DEFAULT_DEPTH: usize = 4; // 6 is too slow
 
 impl Game {
     pub fn search(&self) -> Move {
@@ -17,8 +17,13 @@ impl Game {
         move_list.get_best_move()
     }
 
-    pub fn search_id(&self) -> Move {
+    pub fn search_id(&self) -> Option<Move>  {
         let mut move_list = self.get_ordered_moves();
+
+        if move_list.len() == 0 {
+           // no legal moves: checkmate or stalemate
+           return None;
+        }
 
         //let mailbox = self.get_mailbox();
         //let phase = self.phase();
@@ -37,7 +42,7 @@ impl Game {
             move_list.sort();
         }
 
-        move_list.get(0).unwrap().mv
+        Some(move_list.get(0).unwrap().mv)
     }
 
     pub fn negamax(&self, depth: usize) -> i32 {
