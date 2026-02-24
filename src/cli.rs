@@ -125,9 +125,15 @@ impl Session {
     }
 
     fn go(&self) {
-        let best_move = self.game.search_id();
-
-        println!("bestmove {}", best_move.to_string());
+        match self.game.search_id() {
+           Some(best_move) => println!("bestmove {}", best_move.to_string()),
+           None => {
+               // no legal move: checkmate or stalemate
+               // You can print something UCI-like or just a message:
+               println!("bestmove (none)");
+               // or: println!("mate"); or distinguish checkmate vs stalemate if you add logic
+           }
+       }
     }
 
     #[allow(dead_code)]
